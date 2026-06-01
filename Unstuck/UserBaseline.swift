@@ -9,6 +9,24 @@ struct UserBaseline: Codable {
     var tapGapMean: Double = 4.0
     var tapGapVar:  Double = 4.0      // std starts ~2s
 
+    // Intra-individual variability — the coefficient of variation (std/mean) of
+    // tap intervals: how *erratic* the rhythm is, independent of how fast it is.
+    // This is the single most-replicated behavioural marker in the literature:
+    // erratic timing (high CV, "lapses of attention") indexes dysregulation, while
+    // steady timing (low CV) tracks flow/hyperfocus — and crucially it matters
+    // *more than mean speed*. In autism it's elevated mainly where ADHD co-occurs,
+    // i.e. exactly this app's brain. We learn the PERSONAL norm, never a generic cut.
+    //   • Kofler, Rapport, Sarver et al. (2013), "Reaction time variability in ADHD:
+    //     a meta-analytic review of 319 studies", Clinical Psychology Review 33(6),
+    //     795–811. doi:10.1016/j.cpr.2013.06.001
+    //     (RT-variability deficits remain after controlling for mean RT; mean-RT
+    //      differences vanish after controlling for variability.)
+    //   • Karalunas, Geurts, Konrad, Bender & Nigg (2014), "Annual Research Review:
+    //     Reaction time variability in ADHD and autism spectrum disorders…",
+    //     J. Child Psychol. & Psychiatry 55(6), 685–710. doi:10.1111/jcpp.12217
+    //     (a proposed trans-diagnostic ADHD↔autism phenotype.)
+    var tapCVMean: Double = 0.6
+
     // Completion rhythm (done / interactions)
     var completionMean: Double = 0.15
 
@@ -32,6 +50,12 @@ struct UserBaseline: Codable {
         (gap - tapGapMean) / tapGapStd
     }
 
+    /// Rhythm noticeably more erratic than this person's norm — the attention-lapse
+    /// signal (the exponential/"tau" component of RT variability). → dysregulation.
+    func cvElevated(_ cv: Double) -> Bool { cv > tapCVMean * 1.35 }
+    /// Rhythm noticeably steadier than usual — locked-in / flow.
+    func cvSteady(_ cv: Double) -> Bool { cv < tapCVMean * 0.70 }
+
     /// Is the current hour a personally low-energy hour? (needs enough history)
     func hourIsLow(_ hour: Int) -> Bool {
         let total = hourActivity.reduce(0, +)
@@ -48,6 +72,12 @@ struct UserBaseline: Codable {
         tapGapMean += a * delta
         tapGapVar  = (1 - a) * (tapGapVar + a * delta * delta)
         sampleCount += 1
+    }
+
+    /// Fold a session's coefficient of variation into the personal norm.
+    mutating func observeTapCV(_ cv: Double) {
+        guard cv.isFinite, cv > 0 else { return }
+        tapCVMean += 0.08 * (cv - tapCVMean)
     }
 
     mutating func observeCompletionRate(_ rate: Double) {
