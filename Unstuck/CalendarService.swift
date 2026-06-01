@@ -20,19 +20,22 @@ final class CalendarService {
     static let shared = CalendarService()
     private let store = EKEventStore()
     private var cached: [HealthSnapshot]?
-    private init() { moved = Self.loadMoved() }
+    private init() { moved = Self.loadDict(Self.movedKey); applied = Self.loadDict(Self.appliedKey) }
 
     private(set) var clashes: [ClashSuggestion] = []
     private var lastEvents: [Ev] = []
-    private var moved: [String: Date]            // title → rescheduled start (persisted)
+    private var moved: [String: Date]            // title → start, VISUAL overlay (read-only calendars)
+    private var applied: [String: Date]          // eventID → original start, written to the REAL calendar (undo)
 
     private let teal  = Color(red: 0.3, green: 0.85, blue: 0.75)
     private let amber = Color(red: 1.0, green: 0.62, blue: 0.25)
     private let green = Color(red: 0.45, green: 0.9, blue: 0.55)   // moved / resolved
 
     private struct Ev {
+        let id: String                           // EKEvent.eventIdentifier (synthetic for mocks)
         let title: String; var start: Date; var end: Date
         var urgency: Double; var clashes: Bool; var moved: Bool
+        var writable: Bool                       // calendar.allowsContentModifications
         var duration: TimeInterval { end.timeIntervalSince(start) }
     }
 
@@ -44,10 +47,14 @@ final class CalendarService {
         if !forceRefresh, let cached { return cached }
 
         var events = await loadEvents()
-        // Apply any rescheduled times the user has accepted
+        // Reflect any moves: a visual overlay (read-only calendars) OR a real move
+        // already written to the calendar (EventKit returns the new time itself).
         events = events.map { e in
-            guard let newStart = moved[e.title] else { return e }
-            var m = e; m.start = newStart; m.end = newStart + e.duration; m.moved = true; return m
+            if let newStart = moved[e.title] {
+                var m = e; m.start = newStart; m.end = newStart + e.duration; m.moved = true; return m
+            }
+            if applied[e.id] != nil { var m = e; m.moved = true; return m }
+            return e
         }
         events = detectClashes(events)     // sweep-line; moved events no longer clash
         lastEvents = events
@@ -72,19 +79,58 @@ final class CalendarService {
         return final
     }
 
-    /// User chose which to protect → learn it, AND auto-reschedule the dropped one.
+    /// User chose which to protect → learn it, then MOVE the dropped event.
+    /// If its calendar is writable, the new time is written back through EventKit
+    /// (one call → propagates to Apple/Google/Outlook). Otherwise we keep a
+    /// visual overlay. Pattern logic (findSlot) still picks the slot.
     func resolve(keep: String, drop: String) {
         ClashPreference.shared.reinforce(kept: keep, over: drop)
 
-        if let dropEv = lastEvents.first(where: { $0.title == drop }) {
-            let busy = lastEvents.filter { $0.title != drop }.map { ($0.start, $0.end) }
-            let earliest = max(Date(), dropEv.start)
-            if let slot = findSlot(duration: dropEv.duration, after: earliest, busy: busy) {
-                moved[drop] = slot
-                saveMoved()
-            }
+        guard let dropEv = lastEvents.first(where: { $0.title == drop }) else { return }
+        let busy = lastEvents.filter { $0.title != drop }.map { ($0.start, $0.end) }
+        let earliest = max(Date(), dropEv.start)
+        guard let slot = findSlot(duration: dropEv.duration, after: earliest, busy: busy) else {
+            cached = nil; return
+        }
+
+        if dropEv.writable, applyMove(eventID: dropEv.id, to: slot, duration: dropEv.duration) {
+            applied[dropEv.id] = dropEv.start          // remember original, for undo
+            saveDict(applied, Self.appliedKey)
+        } else {
+            moved[drop] = slot                          // visual overlay (read-only calendar)
+            saveDict(moved, Self.movedKey)
         }
         cached = nil   // recompute with the new placement
+    }
+
+    /// Put a moved event back where it was — pull-to-undo, never framed as failure.
+    func undo(_ title: String) {
+        guard let ev = lastEvents.first(where: { $0.title == title }) else { return }
+        if let original = applied[ev.id] {
+            _ = applyMove(eventID: ev.id, to: original, duration: ev.duration)
+            applied[ev.id] = nil; saveDict(applied, Self.appliedKey)
+        }
+        if moved[title] != nil { moved[title] = nil; saveDict(moved, Self.movedKey) }
+        cached = nil
+    }
+
+    /// Whether `title` currently shows as moved (so the UI can offer Undo).
+    func isMoved(_ title: String) -> Bool {
+        guard let ev = lastEvents.first(where: { $0.title == title }) else { return false }
+        return moved[title] != nil || applied[ev.id] != nil
+    }
+
+    /// One cross-platform write. EventKit is the single backend for Apple, Google,
+    /// and Outlook, so this save propagates the move to all of them. Returns false
+    /// if the event is gone or the calendar is read-only (caller falls back to a
+    /// visual overlay) — never throws upward.
+    private func applyMove(eventID: String, to newStart: Date, duration: TimeInterval) -> Bool {
+        guard let event = store.event(withIdentifier: eventID) else { return false }
+        guard event.calendar?.allowsContentModifications ?? false else { return false }
+        event.startDate = newStart
+        event.endDate = newStart.addingTimeInterval(duration)
+        do { try store.save(event, span: .thisEvent, commit: true); return true }
+        catch { return false }
     }
 
     // MARK: - Sweep-line clash detection (O(n log n) + O(n))
@@ -195,9 +241,11 @@ final class CalendarService {
         let real = store.events(matching: predicate)
             .filter { !$0.isAllDay }
             .map { e in
-                Ev(title: e.title ?? "event", start: e.startDate, end: e.endDate,
+                Ev(id: e.eventIdentifier ?? UUID().uuidString,
+                   title: e.title ?? "event", start: e.startDate, end: e.endDate,
                    urgency: 1.0 - (e.startDate.timeIntervalSince(now) / span),
-                   clashes: false, moved: false)
+                   clashes: false, moved: false,
+                   writable: e.calendar?.allowsContentModifications ?? false)
             }
         return real.isEmpty ? mockEvents(now) : real
     }
@@ -222,26 +270,27 @@ final class CalendarService {
             cal.date(bySettingHour: h, minute: m, second: 0, of: now) ?? now
         }
         return [
-            Ev(title: "Standup",  start: at(9),  end: at(9, 30),  urgency: 0.8, clashes: false, moved: false),
-            Ev(title: "Dentist",  start: at(14), end: at(15),     urgency: 0.9, clashes: false, moved: false),
-            Ev(title: "Call Mom", start: at(14), end: at(14, 30), urgency: 0.7, clashes: false, moved: false),
-            Ev(title: "Gym",      start: at(18), end: at(19),     urgency: 0.4, clashes: false, moved: false),
+            Ev(id: "mock-standup", title: "Standup",  start: at(9),  end: at(9, 30),  urgency: 0.8, clashes: false, moved: false, writable: false),
+            Ev(id: "mock-dentist", title: "Dentist",  start: at(14), end: at(15),     urgency: 0.9, clashes: false, moved: false, writable: false),
+            Ev(id: "mock-callmom", title: "Call Mom", start: at(14), end: at(14, 30), urgency: 0.7, clashes: false, moved: false, writable: false),
+            Ev(id: "mock-gym",     title: "Gym",      start: at(18), end: at(19),     urgency: 0.4, clashes: false, moved: false, writable: false),
         ]
     }
 
     // MARK: - Persistence + helpers
 
-    private static let movedKey = "unstuck.movedEvents"
-    private static func loadMoved() -> [String: Date] {
-        guard let data = UserDefaults.standard.data(forKey: movedKey),
+    private static let movedKey   = "unstuck.movedEvents"
+    private static let appliedKey = "unstuck.appliedMoves"
+    private static func loadDict(_ key: String) -> [String: Date] {
+        guard let data = UserDefaults.standard.data(forKey: key),
               let d = try? JSONDecoder().decode([String: Date].self, from: data) else { return [:] }
-        // Drop stale reschedules whose time has already passed — no accumulation
+        // Drop stale entries whose time has already passed — no accumulation
         let cutoff = Date().addingTimeInterval(-3600)
         return d.filter { $0.value > cutoff }
     }
-    private func saveMoved() {
-        if let data = try? JSONEncoder().encode(moved) {
-            UserDefaults.standard.set(data, forKey: Self.movedKey)
+    private func saveDict(_ dict: [String: Date], _ key: String) {
+        if let data = try? JSONEncoder().encode(dict) {
+            UserDefaults.standard.set(data, forKey: key)
         }
     }
 

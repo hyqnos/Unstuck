@@ -10,6 +10,7 @@ struct ClusterDetailView: View {
     @State private var estimateMinutes: Int? = nil
     @State private var healthNodes: [HealthSnapshot] = []
     @State private var clashes: [ClashSuggestion] = []
+    @State private var lastMovedTitle: String? = nil   // for pull-to-undo after a move
     @FocusState private var focused: Bool
 
     private var activeItems: [BrainItem] {
@@ -59,6 +60,14 @@ struct ClusterDetailView: View {
                     }
                     .padding(.horizontal, 20)
                     .padding(.bottom, 12)
+                }
+
+                // After a move: a calm, reversible confirmation (RSD-safe, no "done!")
+                if let moved = lastMovedTitle {
+                    MovedRow(title: moved) { undoMove(moved) }
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 12)
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
                 }
 
                 // Capture area
@@ -139,6 +148,19 @@ struct ClusterDetailView: View {
             healthNodes = await CalendarService.shared.fetchUpcoming(forceRefresh: true)
             withAnimation(.easeInOut(duration: 0.3)) {
                 clashes = CalendarService.shared.clashes
+                lastMovedTitle = CalendarService.shared.isMoved(drop) ? drop : nil
+            }
+        }
+    }
+
+    private func undoMove(_ title: String) {
+        HapticEngine.shared.tap()
+        CalendarService.shared.undo(title)
+        Task {
+            healthNodes = await CalendarService.shared.fetchUpcoming(forceRefresh: true)
+            withAnimation(.easeInOut(duration: 0.3)) {
+                clashes = CalendarService.shared.clashes
+                lastMovedTitle = nil
             }
         }
     }
@@ -369,9 +391,10 @@ private struct ClashRow: View {
                 choice(clash.drop) { onChoose(clash.drop, clash.keep) }
             }
 
-            Text("the other slides to your next free slot")
+            Text("the other moves to your next free slot — synced across your calendars")
                 .font(.system(size: 8, design: .monospaced))
                 .foregroundStyle(.white.opacity(0.3))
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
@@ -391,6 +414,41 @@ private struct ClashRow: View {
                 .panel(Capsule())
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Moved confirmation — calm + reversible (no "done!", RSD-safe)
+
+private struct MovedRow: View {
+    let title: String
+    let onUndo: () -> Void
+    private let green = Color(red: 0.45, green: 0.9, blue: 0.55)
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "arrow.turn.up.right")
+                .font(.system(size: 11))
+                .foregroundStyle(green)
+            Text("\u{201C}\(title)\u{201D} moved to your next free slot")
+                .font(.system(size: 10, design: .monospaced))
+                .foregroundStyle(.white.opacity(0.7))
+                .lineLimit(1)
+            Spacer(minLength: 8)
+            Button(action: onUndo) {
+                Text("undo")
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.85))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .panel(Capsule())
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .panel(RoundedRectangle(cornerRadius: 14, style: .continuous),
+               tint: green.opacity(0.07))
     }
 }
 
