@@ -433,7 +433,6 @@ struct BrainMapView: View {
             seedIfNeeded()
             motion.start()
             mood.start()
-            patterns.analyse(clusters: clusters)
 
             // Phase 6 — silently check if returning from a freeze
             returnState.recordOpen()
@@ -441,20 +440,28 @@ struct BrainMapView: View {
                 showingBreadcrumbs = true
             }
 
-            // Spatial audio only when NOT in breadcrumb mode (keep return calm + quiet).
-            // Setup runs on a background queue internally — safe to call directly.
-            if !showingBreadcrumbs {
-                SpatialAudioService.shared.start(clusters: clusters)
-            }
+            // Cold-start: let the map paint on the FIRST frame, then bloom the heavier
+            // work a beat later. Firing the pattern pass, the audio-engine spin-up and
+            // the laser-show Canvas all on frame one — on top of the starfield, aurora,
+            // clusters and tilt layer — is what made a cold launch hitch. Deferring also
+            // reads nicer: the calm map appears instantly, then the energy blooms in.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                patterns.analyse(clusters: clusters)
 
-            // Welcome rave on launch — brief, non-blocking, skipped in calm mode,
-            // during a freeze-return, and on the very first run (meet the calm map first).
-            if !settings.calmMode && !showingBreadcrumbs && !showOnboarding {
-                introStart = Date()
-                showIntro = true
-                HapticEngine.shared.reward(.rigid)
-                let introLen = settings.insaneMode ? 4.0 : 2.6
-                DispatchQueue.main.asyncAfter(deadline: .now() + introLen) { showIntro = false }
+                // Spatial audio only when NOT in breadcrumb mode (keep return calm + quiet).
+                if !showingBreadcrumbs {
+                    SpatialAudioService.shared.start(clusters: clusters)
+                }
+
+                // Welcome rave — brief, non-blocking, skipped in calm mode, during a
+                // freeze-return, and on the very first run (meet the calm map first).
+                if !settings.calmMode && !showingBreadcrumbs && !showOnboarding {
+                    introStart = Date()
+                    showIntro = true
+                    HapticEngine.shared.reward(.rigid)
+                    let introLen = settings.insaneMode ? 4.0 : 2.6
+                    DispatchQueue.main.asyncAfter(deadline: .now() + introLen) { showIntro = false }
+                }
             }
         }
         // Insane mode — every completion pops a quick laser burst
