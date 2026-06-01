@@ -84,8 +84,9 @@ final class FocusSessionController {
         ticker?.invalidate()
         // 1 Hz, only to auto-end at zero and let in-app views observe `remaining`.
         ticker = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                guard let self, self.isActive, !self.isPaused else { return }
+            guard let self else { return }
+            Task { @MainActor [self] in
+                guard self.isActive, !self.isPaused else { return }
                 if self.remaining <= 0 { self.end() }
             }
         }
