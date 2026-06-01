@@ -2,9 +2,21 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
 	</array>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Unstuck reads your steps, sleep, and heart rate to show your body's patterns — visible only to you, never leaves your device.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Unstuck listens only when you press the Action Button to capture a thought. Nothing is stored or sent anywhere.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Unstuck transcribes what you say into a thought node on your brain map. Stays on your device.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Unstuck shows your upcoming events — from any calendar you've added (Apple, Google, Outlook) — in your time space, and gently flags overlaps. Read-only, stays on your device.</string>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>Unstuck surfaces your due reminders in your time space so they're part of the picture. Read-only, stays on your device.</string>
 </dict>
 </plist>

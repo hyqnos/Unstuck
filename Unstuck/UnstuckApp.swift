@@ -2,17 +2,20 @@
 //  UnstuckApp.swift
 //  Unstuck
 //
-//  Created by MacBook on 30.05.2026.
+//  Created byDeniz MacBook on 30.05.2026.
 //
 
 import SwiftUI
 import SwiftData
+import AppIntents
 
 @main
 struct UnstuckApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            Cluster.self,
+            BrainItem.self,
+            CoachingNote.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -26,6 +29,10 @@ struct UnstuckApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .onAppear {
+                    // Register Action Button shortcut so it appears in Settings → Action Button
+                    UnstuckShortcuts.updateAppShortcutParameters()
+                }
         }
         .modelContainer(sharedModelContainer)
     }

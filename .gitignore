@@ -1,0 +1,38 @@
+# ───── macOS ─────
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ───── Xcode ─────
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM
+*.dSYM.zip
+*.perspectivev3
+!default.perspectivev3
+
+# Xcode build & index
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.playground/playground.xcworkspace/xcuserdata/
+
+# ───── Swift Package Manager ─────
+.build/
+.swiftpm/
+Package.resolved
+
+# ───── Dependency managers (not used, kept safe) ─────
+Pods/
+Carthage/Build/
+
+# ───── Secrets / local config ─────
+Secrets.plist
+*.xcconfig.local
+*.env
