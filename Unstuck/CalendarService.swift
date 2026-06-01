@@ -32,10 +32,11 @@ final class CalendarService {
     private let green = Color(red: 0.45, green: 0.9, blue: 0.55)   // moved / resolved
 
     private struct Ev {
-        let id: String                           // EKEvent.eventIdentifier (synthetic for mocks)
+        let id: String                           // EKEvent.eventIdentifier / reminder id (synthetic for mocks)
         let title: String; var start: Date; var end: Date
         var urgency: Double; var clashes: Bool; var moved: Bool
         var writable: Bool                       // calendar.allowsContentModifications
+        var isReminder: Bool = false             // reminders share the flow; written via EKReminder
         var duration: TimeInterval { end.timeIntervalSince(start) }
     }
 
@@ -47,6 +48,7 @@ final class CalendarService {
         if !forceRefresh, let cached { return cached }
 
         var events = await loadEvents()
+        events.append(contentsOf: await loadReminders())   // unify planners: reminders join the same clash flow
         // Reflect any moves: a visual overlay (read-only calendars) OR a real move
         // already written to the calendar (EventKit returns the new time itself).
         events = events.map { e in
@@ -59,22 +61,23 @@ final class CalendarService {
         events = detectClashes(events)     // sweep-line; moved events no longer clash
         lastEvents = events
 
-        var nodes: [HealthSnapshot] = events.map { e in
-            if e.moved {
-                return HealthSnapshot(label: "\(short(e.title)) → \(timeString(e.start))",
-                                      icon: "arrow.turn.up.right", urgency: 0.5, tint: green)
+        let nodes: [HealthSnapshot] = events
+            .sorted { $0.start < $1.start }
+            .prefix(8)
+            .map { e in
+                if e.moved {
+                    return HealthSnapshot(label: "\(short(e.title)) → \(timeString(e.start))",
+                                          icon: "arrow.turn.up.right", urgency: 0.5, tint: green)
+                }
+                let baseIcon = e.isReminder ? "bell.fill" : "calendar"
+                return HealthSnapshot(
+                    label: "\(timeString(e.start)) \(short(e.title))",
+                    icon: e.clashes ? "exclamationmark.2" : baseIcon,
+                    urgency: e.clashes ? 0.9 : clamp(e.urgency),
+                    tint: e.clashes ? amber : teal)
             }
-            return HealthSnapshot(
-                label: "\(timeString(e.start)) \(short(e.title))",
-                icon: e.clashes ? "exclamationmark.2" : "calendar",
-                urgency: e.clashes ? 0.9 : clamp(e.urgency),
-                tint: e.clashes ? amber : teal)
-        }
-        for r in await loadReminders() {
-            nodes.append(HealthSnapshot(label: "\(timeString(r)) ·", icon: "bell.fill", urgency: 0.4, tint: teal))
-        }
 
-        let final = Array(nodes.prefix(8))
+        let final = Array(nodes)
         cached = final
         return final
     }
@@ -93,7 +96,7 @@ final class CalendarService {
             cached = nil; return
         }
 
-        if dropEv.writable, applyMove(eventID: dropEv.id, to: slot, duration: dropEv.duration) {
+        if dropEv.writable, applyMove(eventID: dropEv.id, isReminder: dropEv.isReminder, to: slot, duration: dropEv.duration) {
             applied[dropEv.id] = dropEv.start          // remember original, for undo
             saveDict(applied, Self.appliedKey)
         } else {
@@ -107,7 +110,7 @@ final class CalendarService {
     func undo(_ title: String) {
         guard let ev = lastEvents.first(where: { $0.title == title }) else { return }
         if let original = applied[ev.id] {
-            _ = applyMove(eventID: ev.id, to: original, duration: ev.duration)
+            _ = applyMove(eventID: ev.id, isReminder: ev.isReminder, to: original, duration: ev.duration)
             applied[ev.id] = nil; saveDict(applied, Self.appliedKey)
         }
         if moved[title] != nil { moved[title] = nil; saveDict(moved, Self.movedKey) }
@@ -124,7 +127,16 @@ final class CalendarService {
     /// and Outlook, so this save propagates the move to all of them. Returns false
     /// if the event is gone or the calendar is read-only (caller falls back to a
     /// visual overlay) — never throws upward.
-    private func applyMove(eventID: String, to newStart: Date, duration: TimeInterval) -> Bool {
+    private func applyMove(eventID: String, isReminder: Bool, to newStart: Date, duration: TimeInterval) -> Bool {
+        if isReminder {
+            guard let reminder = store.calendarItem(withIdentifier: eventID) as? EKReminder,
+                  reminder.calendar?.allowsContentModifications ?? false else { return false }
+            // Same cross-platform path: EventKit writes the reminder back to its source.
+            reminder.dueDateComponents = Calendar.current.dateComponents(
+                [.year, .month, .day, .hour, .minute], from: newStart)
+            do { try store.save(reminder, commit: true); return true }
+            catch { return false }
+        }
         guard let event = store.event(withIdentifier: eventID) else { return false }
         guard event.calendar?.allowsContentModifications ?? false else { return false }
         event.startDate = newStart
@@ -137,7 +149,8 @@ final class CalendarService {
 
     private func detectClashes(_ input: [Ev]) -> [Ev] {
         guard input.count > 1 else { clashes = []; return input }
-        var ev = input.sorted { $0.start < $1.start }
+        // At equal starts, longer interval first so a zero-length reminder inside it is caught.
+        var ev = input.sorted { $0.start == $1.start ? $0.end > $1.end : $0.start < $1.start }
         var maxEnd = Date.distantPast
         var maxIdx = -1
         var pairs: [(Int, Int)] = []
@@ -250,7 +263,7 @@ final class CalendarService {
         return real.isEmpty ? mockEvents(now) : real
     }
 
-    private func loadReminders() async -> [Date] {
+    private func loadReminders() async -> [Ev] {
         let granted = await withCheckedContinuation { (c: CheckedContinuation<Bool, Never>) in
             store.requestFullAccessToReminders { ok, _ in c.resume(returning: ok) }
         }
@@ -258,9 +271,16 @@ final class CalendarService {
         let reminders: [EKReminder] = await withCheckedContinuation { c in
             store.fetchReminders(matching: store.predicateForReminders(in: nil)) { c.resume(returning: $0 ?? []) }
         }
-        return reminders.filter { !$0.isCompleted }
-            .compactMap { $0.dueDateComponents?.date }
-            .filter { $0 > Date() }.sorted()
+        let now = Date()
+        return reminders
+            .filter { !$0.isCompleted }
+            .compactMap { r -> Ev? in
+                guard let due = r.dueDateComponents?.date, due > now else { return nil }
+                return Ev(id: r.calendarItemIdentifier, title: r.title ?? "reminder",
+                          start: due, end: due, urgency: 0.4, clashes: false, moved: false,
+                          writable: r.calendar?.allowsContentModifications ?? false, isReminder: true)
+            }
+            .sorted { $0.start < $1.start }
     }
 
     // Mock with a deliberate clash so the feature is visible without real accounts
