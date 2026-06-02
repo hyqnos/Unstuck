@@ -1,10 +1,16 @@
 import Foundation
+// Apple Intelligence's on-device model lives in FoundationModels, which only exists
+// on very recent OSes. Gating it (compile-time canImport + runtime #available) lets
+// the app run on the far wider base of older devices — which matters for the shared
+// or hand-me-down iPads/iPhones common in schools — falling back to keyword routing.
+#if canImport(FoundationModels)
 import FoundationModels
+#endif
 
 actor ClusterClassifier {
     static let shared = ClusterClassifier()
 
-    private var session: LanguageModelSession?
+    private var session: Any?          // LanguageModelSession on iOS 26+, else nil → keyword fallback
     private var sessionTried = false
 
     init() {}
@@ -13,6 +19,8 @@ actor ClusterClassifier {
     private func ensureSession() {
         guard !sessionTried else { return }
         sessionTried = true
+        #if canImport(FoundationModels)
+        guard #available(iOS 26.0, *) else { return }
         guard SystemLanguageModel.default.isAvailable else { return }
         session = LanguageModelSession(instructions: """
         You classify short thoughts, tasks, or ideas into exactly one zone.
@@ -28,6 +36,7 @@ actor ClusterClassifier {
 
         Reply with ONLY the zone name. No punctuation, no explanation.
         """)
+        #endif
     }
 
     func classify(text: String) async -> ZoneType {
@@ -38,14 +47,18 @@ actor ClusterClassifier {
     /// The clean title becomes the node label; the raw input stays as a sub-detail.
     func classifyAndName(text: String) async -> (zone: ZoneType, title: String) {
         ensureSession()
-        if let session {
+        #if canImport(FoundationModels)
+        if #available(iOS 26.0, *), let session = session as? LanguageModelSession {
             return await classifyWithModel(text: text, session: session)
         }
+        #endif
         return (classifyWithKeywords(text: text), heuristicTitle(text))
     }
 
     // MARK: - On-device model (real device with Apple Intelligence)
 
+    #if canImport(FoundationModels)
+    @available(iOS 26.0, *)
     private func classifyWithModel(text: String, session: LanguageModelSession) async -> (zone: ZoneType, title: String) {
         let prompt = """
         Thought: "\(text)"
@@ -70,6 +83,7 @@ actor ClusterClassifier {
             return (classifyWithKeywords(text: text), heuristicTitle(text))
         }
     }
+    #endif
 
     // MARK: - Title helpers
 

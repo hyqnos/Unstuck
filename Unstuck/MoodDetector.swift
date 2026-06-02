@@ -41,6 +41,7 @@ final class MoodDetector {
         if interactions > 2 {
             baseline.observeSession(sessionMins)
             baseline.observeCompletionRate(completionRate)
+            if tapIntervals.count >= 5 { baseline.observeTapCV(tapCV) }
         }
         baseline.save()
     }
@@ -82,9 +83,21 @@ final class MoodDetector {
         tapIntervals.isEmpty ? baseline.tapGapMean : tapIntervals.reduce(0, +) / Double(tapIntervals.count)
     }
 
+    /// Coefficient of variation (std / mean) of recent tap intervals — how erratic
+    /// the rhythm is, independent of speed. This is the intra-individual-variability
+    /// marker (Kofler 2013; Karalunas 2014) — high = lapses/dysregulation, low = flow.
+    private var tapCV: Double {
+        guard tapIntervals.count >= 4 else { return baseline.tapCVMean }
+        let mean = tapIntervals.reduce(0, +) / Double(tapIntervals.count)
+        guard mean > 0 else { return baseline.tapCVMean }
+        let variance = tapIntervals.reduce(0) { $0 + ($1 - mean) * ($1 - mean) } / Double(tapIntervals.count)
+        return variance.squareRoot() / mean
+    }
+
     // MARK: - Periodic tick — re-evaluate + persist baseline
 
     private func tick() {
+        if tapIntervals.count >= 5 { baseline.observeTapCV(tapCV) }
         evaluate()
         baseline.save()
     }
@@ -107,16 +120,20 @@ final class MoodDetector {
 
     private func classifyPersonal(hour: Int, sessionMins: Double) -> BrainMode {
         let z = baseline.tapGapZ(avgTapGap)        // <0 faster than usual, >0 slower
+        let cv = tapCV                             // rhythm steadiness (IIV marker)
         let rate = completionRate
         let personalRate = baseline.completionMean
 
-        // Hyperfocus — moving much faster than YOUR norm AND finishing things
-        if z < -1.0 && rate >= personalRate && sessionMins > 4 {
+        // Hyperfocus — a STEADY rhythm for YOU (flow), with things landing. Flow
+        // reads as low variability, not merely speed (Kofler 2013; Karalunas 2014).
+        if (baseline.cvSteady(cv) || z < -1.0) && rate >= personalRate && sessionMins > 4 {
             return .hyperfocus
         }
 
-        // Overwhelm — fast for YOU but nothing landing (spinning, not progressing)
-        if z < -0.8 && rate < personalRate * 0.4 && interactions > 5 {
+        // Overwhelm — an ERRATIC rhythm (attention lapses) with little landing.
+        // Variability, not slowness, is the dysregulation signal: RT-variability
+        // deficits persist after controlling for mean speed (Kofler 2013).
+        if baseline.cvElevated(cv) && rate < personalRate * 0.5 && interactions > 5 {
             return .overwhelm
         }
 
@@ -136,14 +153,25 @@ final class MoodDetector {
 
     private func classifyGeneric(hour: Int, sessionMins: Double) -> BrainMode {
         let gap  = avgTapGap
+        let cv   = tapCV
         let rate = completionRate
-        if gap < 1.5 && rate > 0.3 && sessionMins > 5 { return .hyperfocus }
-        if gap < 2.0 && rate < 0.05 && interactions > 5 { return .overwhelm }
-        let lateOrEarly  = hour >= 22 || hour < 7
+        // Steady rhythm OR fast + landing → flow; erratic rhythm + nothing landing → overwhelm.
+        if (cv < 0.45 || gap < 1.5) && rate > 0.3 && sessionMins > 5 { return .hyperfocus }
+        if (cv > 0.95 || gap < 2.0) && rate < 0.06 && interactions > 5 { return .overwhelm }
+        // ADHD skews to a late/evening chronotype with a delayed circadian phase, so
+        // late evening is often PEAK focus, not low energy. Don't penalise the
+        // evening; only the deep overnight trough (~2–6am, the circadian minimum
+        // even night-owls hit) counts as generically low until we've learned this
+        // person's own hours (after which hourIsLow() in classifyPersonal takes over).
+        //   Coogan & McGowan (2017), "A systematic review of circadian function,
+        //   chronotype and chronotherapy in ADHD", Attention Deficit and Hyperactivity
+        //   Disorders 9(3):129–147, doi:10.1007/s12402-016-0214-5
+        //   (consistent eveningness / phase delay across 62 studies, 4462 patients).
+        let deepNight    = hour >= 2 && hour < 6
         let afternoonDip = hour >= 13 && hour <= 15
         let slowTaps     = gap > 8.0
         let longSession  = sessionMins > 45
-        if lateOrEarly || (afternoonDip && slowTaps) || (longSession && rate < 0.15) {
+        if deepNight || (afternoonDip && slowTaps) || (longSession && rate < 0.15) {
             return .lowBattery
         }
         return .ready

@@ -8,10 +8,14 @@ struct OnboardingView: View {
     @State private var step = 0
     @State private var lineIn = false
 
-    // Declarative, warm — the app's voice. Never a command.
+    // Declarative, warm — the app's voice. Never a command. Lines 3–4 added for a
+    // wider audience: a plain privacy reassurance and a no-label note on how it
+    // adapts (never names a state; just "meets you where you are").
     private let lines = [
         "this is a place to put\nwhat's in your head.",
         "type anything.\nit finds its own spot.",
+        "what you write stays here,\non your phone. only yours.",
+        "it quietly learns your rhythm,\nand meets you where you are.",
         "come and go as you like.\nnothing here is ever overdue.",
     ]
 
