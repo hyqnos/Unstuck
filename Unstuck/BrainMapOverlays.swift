@@ -41,6 +41,21 @@ extension BrainMapView {
         }
     }
 
+    @ViewBuilder var deckOverlay: some View {
+        if showDeck {
+            ExpandingDeckView(
+                clusters: clusters,
+                onOpenDetail: { c in
+                    showDeck = false
+                    withAnimation(.spring(response: 0.42, dampingFraction: 0.78)) { focusedCluster = c }
+                },
+                onClose: { withAnimation(.easeInOut(duration: 0.28)) { showDeck = false } }
+            )
+            .transition(.opacity.combined(with: .move(edge: .bottom)))
+            .zIndex(48)
+        }
+    }
+
     @ViewBuilder var webOverlay: some View {
         if let s = webStart {
             WebShotView(start: s)
@@ -200,6 +215,7 @@ extension BrainMapView {
             celebrateOverlay
             secretOverlay
             webOverlay
+            deckOverlay
             milestoneOverlay
             detailOverlay
             survivalOverlay
@@ -223,6 +239,11 @@ extension BrainMapView {
                 .padding(.leading, 20)
                 .padding(.top, 58)
                 .animation(.easeInOut(duration: 0.6), value: mood.mode)
+                // Long-press your mood → the calm card deck (a quieter way to browse)
+                .onLongPressGesture(minimumDuration: 0.4) {
+                    HapticEngine.shared.reward(.soft)
+                    withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) { showDeck = true }
+                }
         }
     }
 
