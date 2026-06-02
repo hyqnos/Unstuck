@@ -255,6 +255,10 @@ extension BrainMapView {
                     HapticEngine.shared.reward(.soft)
                     withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) { showDeck = true }
                 }
+                .accessibilityLabel("Mood")
+                .accessibilityAction(named: "Browse as cards") {
+                    withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) { showDeck = true }
+                }
         }
     }
 
@@ -270,6 +274,9 @@ extension BrainMapView {
                     .frame(width: 40, height: 40)
                     .panel(Circle(), tint: settings.sensory == .normal ? nil : sensoryTint.opacity(0.12))
             }
+            .accessibilityLabel("Sensory level")
+            .accessibilityValue(settings.sensory.rawValue)
+            .accessibilityHint("Cycles calm, normal, intense")
 
             // Focus music — mood-reactive ambient bed
             Button(action: toggleMusic) {
@@ -279,6 +286,8 @@ extension BrainMapView {
                     .frame(width: 40, height: 40)
                     .panel(Circle(), tint: settings.focusMusic ? .white.opacity(0.1) : nil)
             }
+            .accessibilityLabel("Focus music")
+            .accessibilityValue(settings.focusMusic ? "on" : "off")
 
             // Companion — toggle the corner creature (fully dismissible, PDA-safe)
             Button(action: toggleCompanion) {
@@ -288,6 +297,8 @@ extension BrainMapView {
                     .frame(width: 40, height: 40)
                     .panel(Circle(), tint: settings.companionOn ? .white.opacity(0.1) : nil)
             }
+            .accessibilityLabel("Companion")
+            .accessibilityValue(settings.companionOn ? "on" : "off")
 
             // Surprise me — kills decision paralysis
             Button(action: surpriseMe) {
@@ -297,6 +308,8 @@ extension BrainMapView {
                     .frame(width: 40, height: 40)
                     .panel(Circle())
             }
+            .accessibilityLabel("Surprise me")
+            .accessibilityHint("Picks one thing for you")
 
             // Teach the app — only on good days
             if isGoodDay {
@@ -310,6 +323,7 @@ extension BrainMapView {
                         .frame(width: 40, height: 40)
                         .panel(Circle())
                 }
+                .accessibilityLabel("Leave a note to yourself")
                 .transition(.scale.combined(with: .opacity))
             }
         }
