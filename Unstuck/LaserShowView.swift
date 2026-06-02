@@ -12,7 +12,6 @@ struct LaserShowView: View {
 
     private var beamCount: Int  { (insane ? 16 : 6) + Int(intensity * 10) }   // up to 26
     private var flameCount: Int { (insane ? 9 : 5) + Int(intensity * 5) }     // up to 15
-    private var beatRate: Double { insane ? 1.6 : 1.0 }
 
     // Rave palette — the tier color plus vivid club hues
     private var palette: [Color] {
@@ -51,8 +50,9 @@ struct LaserShowView: View {
                 guard t >= 0, t < duration else { return }
 
                 let env  = envelope(t)
-                // ~128 BPM kick — sharp pulses (faster in insane mode)
-                let beat = pow(max(0, sin(t * .pi * (128.0 / 60.0) * 2 * beatRate)), 6)
+                // Flash rate capped to ~2.6 Hz for ALL modes (WCAG: < 3 flashes/sec) —
+                // photosensitivity safety. Insane mode adds beams/flames, never faster strobe.
+                let beat = pow(max(0, sin(t * .pi * 2.6)), 6)
                 let stage = CGPoint(x: size.width / 2, y: size.height / 2)
                 let reach = hypot(size.width, size.height)
 
@@ -69,7 +69,7 @@ struct LaserShowView: View {
 
     private func drawLasers(_ ctx: GraphicsContext, stage: CGPoint, reach: CGFloat,
                             t: Double, env: Double, beat: Double) {
-        let bright = env * (0.35 + 0.65 * beat)
+        let bright = env * (0.45 + 0.55 * beat)   // shallower on/off → gentler, non-strobing flash
         for i in 0..<beamCount {
             let base = Double(i) / Double(beamCount) * .pi * 2
             let sweep = sin(t * (1.1 + Double(i % 3) * 0.4) + Double(i)) * 0.6
