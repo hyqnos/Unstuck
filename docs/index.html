@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Unstuck — a place to put what's in your head</title>
+<meta name="description" content="Unstuck is a no-label thinking space for iOS. Capture thoughts, see your time, and get moving — on a calm map that meets you where you are. On-device and private." />
+<style>
+  :root{
+    --bg:#06060f; --bg2:#0b0b1c; --ink:#eef0ff; --mut:#9aa0c4;
+    --teal:#4cd9bf; --amber:#ffb066; --line:rgba(255,255,255,.08);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; color:var(--ink); background:var(--bg);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+    line-height:1.6; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(1200px 700px at 70% -10%, rgba(76,217,191,.10), transparent 60%),
+      radial-gradient(900px 600px at 0% 20%, rgba(120,120,255,.08), transparent 55%),
+      linear-gradient(180deg, var(--bg2), var(--bg) 40%);
+  }
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .wrap{max-width:980px;margin:0 auto;padding:0 24px}
+  a{color:var(--teal);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  /* Hero */
+  header.hero{padding:96px 0 56px;text-align:center}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;
+    background:var(--teal);box-shadow:0 0 22px 4px rgba(76,217,191,.6);margin-bottom:26px;
+    animation:breathe 4s ease-in-out infinite}
+  @keyframes breathe{0%,100%{opacity:.55;transform:scale(1)}50%{opacity:1;transform:scale(1.25)}}
+  h1{font-size:clamp(40px,8vw,76px);margin:0;letter-spacing:-.02em;font-weight:700}
+  .tag{font-size:clamp(18px,3.4vw,24px);color:var(--ink);margin:18px auto 0;max-width:560px;font-weight:300}
+  .sub{color:var(--mut);max-width:540px;margin:16px auto 0}
+  .cta{margin-top:34px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .btn{display:inline-block;padding:12px 22px;border-radius:999px;font-weight:600;font-size:15px}
+  .btn.primary{background:var(--teal);color:#04130f}
+  .btn.ghost{border:1px solid var(--line);color:var(--ink)}
+  .soon{display:block;margin-top:14px;color:var(--mut);font-size:13px}
+
+  /* Scenario */
+  .scene{padding:64px 0;text-align:center;border-top:1px solid var(--line)}
+  .scene p{font-size:clamp(20px,4vw,30px);font-weight:300;max-width:720px;margin:0 auto;letter-spacing:-.01em}
+  .scene .hl{color:var(--teal)}
+
+  /* Shots */
+  .shots{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;padding:24px 0 8px}
+  .shots figure{margin:0;width:210px}
+  .shots img{width:100%;border-radius:26px;border:1px solid var(--line);
+    box-shadow:0 18px 50px rgba(0,0,0,.5);background:#000}
+  .shots figcaption{color:var(--mut);font-size:12px;text-align:center;margin-top:10px}
+
+  /* Features */
+  .feat{padding:70px 0 30px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px}
+  .card{border:1px solid var(--line);border-radius:18px;padding:24px;background:rgba(255,255,255,.02)}
+  .card h3{margin:.2em 0 .4em;font-size:18px}
+  .card p{color:var(--mut);margin:0;font-size:15px}
+  .kic{font-size:22px}
+
+  /* Privacy band */
+  .priv{margin:70px 0;padding:40px 28px;border:1px solid var(--line);border-radius:22px;text-align:center;
+    background:radial-gradient(600px 200px at 50% 0%, rgba(76,217,191,.08), transparent)}
+  .priv h2{margin:0 0 8px;font-size:26px}
+  .priv p{color:var(--mut);max-width:560px;margin:0 auto}
+
+  footer{border-top:1px solid var(--line);padding:38px 0 70px;text-align:center;color:var(--mut);font-size:14px}
+  footer a{margin:0 10px}
+  .label{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut)}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="dot"></span>
+    <h1>Unstuck</h1>
+    <p class="tag">A place to put what's in your head.</p>
+    <p class="sub">Not a to-do list. A calm map your thoughts live on — that you can fill, leave, and come back to whenever.</p>
+    <div class="cta">
+      <a class="btn primary" href="#peek">See it</a>
+      <a class="btn ghost" href="TEACHERS_GUIDE.html">For teachers</a>
+    </div>
+    <span class="soon mono">coming to TestFlight</span>
+  </div>
+</header>
+
+<section class="scene">
+  <div class="wrap">
+    <p>Ever open the fridge and <span class="hl">forget why?</span> Walk into a room and lose the thread? Your thoughts don't live in a list — they live in a <span class="hl">space</span>. Unstuck gives them one.</p>
+  </div>
+</section>
+
+<section id="peek" class="wrap">
+  <div class="shots">
+    <figure><img src="img/onboarding.png" alt="A calm first-run screen"><figcaption>a calm start</figcaption></figure>
+    <figure><img src="img/brain-map.png" alt="The brain map of clustered thoughts"><figcaption>your brain map</figcaption></figure>
+    <figure><img src="img/laser-show.png" alt="A reward moment on finishing something"><figcaption>a real win</figcaption></figure>
+    <figure><img src="img/time-reschedule.png" alt="Time space gently resolving an overlap"><figcaption>time, handled</figcaption></figure>
+  </div>
+</section>
+
+<section class="feat wrap">
+  <span class="label mono">what it does</span>
+  <div class="grid" style="margin-top:18px">
+    <div class="card"><div class="kic">🗺️</div><h3>A map, not a list</h3><p>Thoughts cluster in a space you can see and remember — not a stack that piles up guilt.</p></div>
+    <div class="card"><div class="kic">⚡</div><h3>Catch it in a second</h3><p>Type or speak a thought before it vanishes. It finds its own spot and lands with a satisfying drop.</p></div>
+    <div class="card"><div class="kic">🌊</div><h3>Meets you where you are</h3><p>Scattered day? It goes quiet and simple. Locked in? It opens up. It adjusts to you — and never says why.</p></div>
+    <div class="card"><div class="kic">🕓</div><h3>Your time, handled</h3><p>When two things overlap, the one that matters stays put and the other quietly slides to your next free slot — across your calendars.</p></div>
+  </div>
+</section>
+
+<section class="wrap">
+  <div class="priv">
+    <h2>Your mind stays yours</h2>
+    <p>Everything lives on your phone. No account, no sign-up, nothing collected, nothing sent anywhere. <a href="privacy.html">Read the privacy policy →</a></p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <a href="privacy.html">Privacy</a> ·
+    <a href="TEACHERS_GUIDE.html">For teachers</a> ·
+    <a href="https://github.com/hyqnos/Unstuck">Code on GitHub</a>
+    <p class="mono" style="margin-top:18px;font-size:12px">Unstuck — a no-label thinking space. Built for any brain that gets overwhelmed by lists.</p>
+  </div>
+</footer>
+
+</body>
+</html>
