@@ -84,6 +84,12 @@ struct ClusterView: View {
                     .allowsHitTesting(false)
             }
         }
+        // VoiceOver: one element per cluster, reads its name + count, opens on activate
+        .accessibilityElement(children: .ignore)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityLabel(Text("\(cluster.label), \(activeItems.count) item\(activeItems.count == 1 ? "" : "s")"))
+        .accessibilityHint(Text("Opens this space"))
+
         // Tactile depth — a quick dip on touch, pops back on open
         .scaleEffect((breathing ? breathAmplitude : 1.0) * (1 - pressDepth * 0.06))
         .rotation3DEffect(.degrees(pressDepth * 5),

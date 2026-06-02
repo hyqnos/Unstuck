@@ -12,6 +12,7 @@ import SwiftUI
 struct CompanionView: View {
     private let mood = MoodDetector.shared
     private let settings = AppSettings.shared
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var breathe = false
     @State private var blink = false
@@ -44,12 +45,17 @@ struct CompanionView: View {
             .task { await live() }
             .onAppear {
                 withAnimation(.spring(response: 0.6, dampingFraction: 0.6)) { born = true }
-                withAnimation(.easeInOut(duration: lowEnergy ? 5 : 3).repeatForever(autoreverses: true)) {
-                    breathe = true
+                // Respect Reduce Motion — no perpetual breathing/float
+                if !reduceMotion {
+                    withAnimation(.easeInOut(duration: lowEnergy ? 5 : 3).repeatForever(autoreverses: true)) {
+                        breathe = true
+                    }
                 }
             }
             .onReceive(NotificationCenter.default.publisher(for: .taskCompleted)) { _ in celebrate() }
             .animation(.easeInOut(duration: 1.2), value: tint)   // recolour gently when mood shifts
+            .accessibilityLabel(Text("Your companion"))
+            .accessibilityHint(Text("A friendly presence. Double-tap to say hi."))
     }
 
     // MARK: - The creature (swap this for a 3D model later)
@@ -94,8 +100,10 @@ struct CompanionView: View {
     // MARK: - Life loop (organic random timing)
 
     @MainActor private func live() async {
-        withAnimation(.easeInOut(duration: lowEnergy ? 4 : 2.4).repeatForever(autoreverses: true)) {
-            bob = lowEnergy ? 1.5 : 3
+        if !reduceMotion {
+            withAnimation(.easeInOut(duration: lowEnergy ? 4 : 2.4).repeatForever(autoreverses: true)) {
+                bob = lowEnergy ? 1.5 : 3
+            }
         }
         while !Task.isCancelled {
             let wait = lowEnergy ? Double.random(in: 4...8) : Double.random(in: 2.2...5.5)

@@ -22,6 +22,7 @@ struct BrainMapView: View {
     @State var mapSize: CGSize = .zero         // cached for collision-avoidance
     @State var overviewMode = false            // four-finger constellation overview
     @State var showDeck = false                // expanding card-deck browse fidget
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State var showIntro = false               // launch laser show
     @State var introStart = Date()
     @State var celebrateStart: Date? = nil     // per-completion rave (insane mode)
@@ -286,7 +287,7 @@ struct BrainMapView: View {
 
                 // Welcome rave — brief, non-blocking, skipped in calm mode, during a
                 // freeze-return, and on the very first run (meet the calm map first).
-                if !settings.calmMode && !showingBreadcrumbs && !showOnboarding {
+                if !settings.calmMode && !showingBreadcrumbs && !showOnboarding && !reduceMotion {
                     introStart = Date()
                     showIntro = true
                     HapticEngine.shared.reward(.rigid)
