@@ -45,6 +45,7 @@ private struct CompanionSceneView: UIViewRepresentable {
         v.backgroundColor = .clear
         v.antialiasingMode = .multisampling2X
         v.isUserInteractionEnabled = false
+        v.preferredFramesPerSecond = 30   // it's tiny — half the framerate, ~half the GPU/battery
         let scene = SCNScene()
         v.scene = scene
         context.coordinator.build(in: scene, tint: tint, animate: animate)
