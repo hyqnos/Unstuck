@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		C0FFEE00000000000000000D /* UnstuckWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000002 /* UnstuckWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		FAE5448D2FCA4B7B00A6452D /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -21,12 +25,34 @@
 			remoteGlobalIDString = FAE5447A2FCA4B7A00A6452D;
 			remoteInfo = Unstuck;
 		};
+		C0FFEE00000000000000000F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FAE544732FCA4B7A00A6452D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C0FFEE000000000000000001;
+			remoteInfo = UnstuckWidgetExtension;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		C0FFEE00000000000000000C /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				C0FFEE00000000000000000D /* UnstuckWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		FAE5447B2FCA4B7A00A6452D /* Unstuck.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Unstuck.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		FAE5448C2FCA4B7B00A6452D /* UnstuckTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = UnstuckTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		FAE544962FCA4B7B00A6452D /* UnstuckUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = UnstuckUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		C0FFEE000000000000000002 /* UnstuckWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = UnstuckWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -36,6 +62,13 @@
 				Info.plist,
 			);
 			target = FAE5447A2FCA4B7A00A6452D /* Unstuck */;
+		};
+		C0FFEE00000000000000000A /* Exceptions for "UnstuckWidget" folder in "UnstuckWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = C0FFEE000000000000000001 /* UnstuckWidgetExtension */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -56,6 +89,19 @@
 		FAE544992FCA4B7B00A6452D /* UnstuckUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = UnstuckUITests;
+			sourceTree = "<group>";
+		};
+		C0FFEE000000000000000003 /* UnstuckWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				C0FFEE00000000000000000A /* Exceptions for "UnstuckWidget" folder in "UnstuckWidgetExtension" target */,
+			);
+			path = UnstuckWidget;
+			sourceTree = "<group>";
+		};
+		C0FFEE00000000000000000B /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Shared;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -82,6 +128,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C0FFEE000000000000000008 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -91,6 +144,8 @@
 				FAE5447D2FCA4B7A00A6452D /* Unstuck */,
 				FAE5448F2FCA4B7B00A6452D /* UnstuckTests */,
 				FAE544992FCA4B7B00A6452D /* UnstuckUITests */,
+				C0FFEE000000000000000003 /* UnstuckWidget */,
+				C0FFEE00000000000000000B /* Shared */,
 				FAE5447C2FCA4B7A00A6452D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -101,6 +156,7 @@
 				FAE5447B2FCA4B7A00A6452D /* Unstuck.app */,
 				FAE5448C2FCA4B7B00A6452D /* UnstuckTests.xctest */,
 				FAE544962FCA4B7B00A6452D /* UnstuckUITests.xctest */,
+				C0FFEE000000000000000002 /* UnstuckWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -115,13 +171,16 @@
 				FAE544772FCA4B7A00A6452D /* Sources */,
 				FAE544782FCA4B7A00A6452D /* Frameworks */,
 				FAE544792FCA4B7A00A6452D /* Resources */,
+				C0FFEE00000000000000000C /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				C0FFEE00000000000000000E /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				FAE5447D2FCA4B7A00A6452D /* Unstuck */,
+				C0FFEE00000000000000000B /* Shared */,
 			);
 			name = Unstuck;
 			packageProductDependencies = (
@@ -176,6 +235,29 @@
 			productReference = FAE544962FCA4B7B00A6452D /* UnstuckUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		C0FFEE000000000000000001 /* UnstuckWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C0FFEE000000000000000004 /* Build configuration list for PBXNativeTarget "UnstuckWidgetExtension" */;
+			buildPhases = (
+				C0FFEE000000000000000007 /* Sources */,
+				C0FFEE000000000000000008 /* Frameworks */,
+				C0FFEE000000000000000009 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				C0FFEE000000000000000003 /* UnstuckWidget */,
+				C0FFEE00000000000000000B /* Shared */,
+			);
+			name = UnstuckWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = UnstuckWidgetExtension;
+			productReference = C0FFEE000000000000000002 /* UnstuckWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -197,6 +279,9 @@
 						CreatedOnToolsVersion = 26.3;
 						TestTargetID = FAE5447A2FCA4B7A00A6452D;
 					};
+					C0FFEE000000000000000001 = {
+						CreatedOnToolsVersion = 26.3;
+					};
 				};
 			};
 			buildConfigurationList = FAE544762FCA4B7A00A6452D /* Build configuration list for PBXProject "Unstuck" */;
@@ -214,6 +299,7 @@
 			projectRoot = "";
 			targets = (
 				FAE5447A2FCA4B7A00A6452D /* Unstuck */,
+				C0FFEE000000000000000001 /* UnstuckWidgetExtension */,
 				FAE5448B2FCA4B7B00A6452D /* UnstuckTests */,
 				FAE544952FCA4B7B00A6452D /* UnstuckUITests */,
 			);
@@ -236,6 +322,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		FAE544942FCA4B7B00A6452D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C0FFEE000000000000000009 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -266,6 +359,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C0FFEE000000000000000007 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -278,6 +378,11 @@
 			isa = PBXTargetDependency;
 			target = FAE5447A2FCA4B7A00A6452D /* Unstuck */;
 			targetProxy = FAE544972FCA4B7B00A6452D /* PBXContainerItemProxy */;
+		};
+		C0FFEE00000000000000000E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C0FFEE000000000000000001 /* UnstuckWidgetExtension */;
+			targetProxy = C0FFEE00000000000000000F /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -563,6 +668,60 @@
 			};
 			name = Release;
 		};
+		C0FFEE000000000000000005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = NL73YZ7JB4;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = UnstuckWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Unstuck;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = Dopa.Unstuck.UnstuckWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		C0FFEE000000000000000006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = NL73YZ7JB4;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = UnstuckWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Unstuck;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = Dopa.Unstuck.UnstuckWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -598,6 +757,15 @@
 			buildConfigurations = (
 				FAE544A82FCA4B7B00A6452D /* Debug */,
 				FAE544A92FCA4B7B00A6452D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C0FFEE000000000000000004 /* Build configuration list for PBXNativeTarget "UnstuckWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C0FFEE000000000000000005 /* Debug */,
+				C0FFEE000000000000000006 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
