@@ -18,6 +18,10 @@ final class MoodDetector {
     private var baseline = UserBaseline.load()
     private var hourRecorded = false
 
+    // Hysteresis — a mode must persist across reads before it's committed
+    private var candidate: BrainMode = .ready
+    private var candidateStreak = 0
+
     static let shared = MoodDetector()
     private init() {}
 
@@ -108,12 +112,24 @@ final class MoodDetector {
         let hour        = Calendar.current.component(.hour, from: Date())
         let sessionMins = Date().timeIntervalSince(sessionStart) / 60
 
-        let new = baseline.isWarmedUp
+        let proposed = baseline.isWarmedUp
             ? classifyPersonal(hour: hour, sessionMins: sessionMins)
             : classifyGeneric(hour: hour, sessionMins: sessionMins)
 
-        guard new != mode else { return }
-        withAnimation(.easeInOut(duration: 2.0)) { mode = new }
+        guard proposed != mode else { candidateStreak = 0; return }
+
+        // Hysteresis — don't flip on a single read. Returning to the neutral "ready"
+        // is immediate (the safe default), but committing to a louder mode
+        // (overwhelm / hyperfocus / low-battery) needs the signal to PERSIST across
+        // several reads. A transient blip can't yank the whole UI around, so a
+        // wrong guess stays small and self-corrects fast. (These thresholds are
+        // still heuristic — this makes being wrong cheap, which is the real goal.)
+        if proposed == candidate { candidateStreak += 1 } else { candidate = proposed; candidateStreak = 1 }
+        let needed = (proposed == .ready) ? 1 : 3
+        guard candidateStreak >= needed else { return }
+
+        candidateStreak = 0
+        withAnimation(.easeInOut(duration: 2.0)) { mode = proposed }
     }
 
     // MARK: - Personal classification (relative to learned baseline)
