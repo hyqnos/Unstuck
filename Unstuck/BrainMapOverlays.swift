@@ -236,11 +236,14 @@ extension BrainMapView {
     @ViewBuilder var companionCorner: some View {
         if settings.companionOn && survivalItem == nil && !showingBreadcrumbs
             && !showOnboarding && !showDeck {
-            CompanionView()
-                .padding(.trailing, 22)
-                .padding(.bottom, 104)   // float above the capture bar
-                .transition(.scale(scale: 0.3).combined(with: .opacity))
-                .allowsHitTesting(true)
+            Group {
+                if reduceMotion { CompanionView() }   // calmer 2D presence under Reduce Motion
+                else { Companion3D() }                 // native 3D SceneKit creature
+            }
+            .padding(.trailing, 18)
+            .padding(.bottom, 100)   // float above the capture bar
+            .transition(.scale(scale: 0.3).combined(with: .opacity))
+            .allowsHitTesting(true)
         }
     }
 

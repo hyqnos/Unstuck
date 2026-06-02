@@ -22,7 +22,7 @@ struct BrainMapView: View {
     @State var mapSize: CGSize = .zero         // cached for collision-avoidance
     @State var overviewMode = false            // four-finger constellation overview
     @State var showDeck = false                // expanding card-deck browse fidget
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceMotion) var reduceMotion
     @State var showIntro = false               // launch laser show
     @State var introStart = Date()
     @State var celebrateStart: Date? = nil     // per-completion rave (insane mode)
