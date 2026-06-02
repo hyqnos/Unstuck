@@ -280,6 +280,15 @@ extension BrainMapView {
                     .panel(Circle(), tint: settings.focusMusic ? .white.opacity(0.1) : nil)
             }
 
+            // Companion — toggle the corner creature (fully dismissible, PDA-safe)
+            Button(action: toggleCompanion) {
+                Image(systemName: settings.companionOn ? "pawprint.fill" : "pawprint")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(.white.opacity(settings.companionOn ? 0.85 : 0.45))
+                    .frame(width: 40, height: 40)
+                    .panel(Circle(), tint: settings.companionOn ? .white.opacity(0.1) : nil)
+            }
+
             // Surprise me — kills decision paralysis
             Button(action: surpriseMe) {
                 Image(systemName: "dice")

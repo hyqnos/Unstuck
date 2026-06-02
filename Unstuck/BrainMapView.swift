@@ -456,6 +456,15 @@ struct BrainMapView: View {
         SpatialAudioService.shared.setMusicEnabled(settings.focusMusic, mode: mood.mode)
     }
 
+    // MARK: - Companion (fully dismissible — PDA-safe; you pull it, you can send it away)
+
+    func toggleCompanion() {
+        HapticEngine.shared.tap()
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+            settings.companionOn.toggle()
+        }
+    }
+
     // MARK: - Sensory dial (calm ↔ normal ↔ insane)
 
     func cycleSensory() {
