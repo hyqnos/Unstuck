@@ -51,6 +51,9 @@ final class Cluster {
 
     var createdAt: Date
 
+    // 🔦 User-chosen highlight colour (hex "RRGGBB"); nil = no highlight.
+    var highlightHex: String? = nil
+
     @Relationship(deleteRule: .cascade, inverse: \BrainItem.cluster)
     var items: [BrainItem]
 

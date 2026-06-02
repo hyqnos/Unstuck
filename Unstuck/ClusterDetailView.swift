@@ -70,6 +70,11 @@ struct ClusterDetailView: View {
                         .transition(.opacity.combined(with: .move(edge: .bottom)))
                 }
 
+                // 🔦 Pick a highlight colour for this cluster (laser palette)
+                HighlightRow(cluster: cluster)
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 2)
+
                 // Capture area
                 VStack(spacing: 8) {
                     // Time estimate chips
@@ -457,6 +462,50 @@ private struct MovedRow: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .panel(RoundedRectangle(cornerRadius: 14, style: .continuous),
                tint: green.opacity(0.07))
+    }
+}
+
+// MARK: - Highlight picker — customise a cluster's glow (the laser palette)
+
+private struct HighlightRow: View {
+    @Bindable var cluster: Cluster
+    private let palette = ["4CD9BF", "FFB066", "FF4D94", "5A7DFF", "5CE08C", "B06CFF"]
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Text("highlight")
+                .font(.system(size: 10, design: .monospaced))
+                .foregroundStyle(.white.opacity(0.3))
+            // Off / clear
+            Button { set(nil) } label: {
+                Image(systemName: "circle.slash")
+                    .font(.system(size: 14))
+                    .foregroundStyle(.white.opacity(cluster.highlightHex == nil ? 0.7 : 0.3))
+            }
+            .buttonStyle(.plain)
+            ForEach(palette, id: \.self) { hex in
+                Button { set(hex) } label: {
+                    Circle()
+                        .fill(Color(hex: hex))
+                        .frame(width: 16, height: 16)
+                        .shadow(color: Color(hex: hex).opacity(0.8),
+                                radius: cluster.highlightHex == hex ? 5 : 0)
+                        .overlay(
+                            Circle().stroke(.white.opacity(cluster.highlightHex == hex ? 0.9 : 0),
+                                            lineWidth: 1.5)
+                        )
+                }
+                .buttonStyle(.plain)
+            }
+            Spacer(minLength: 0)
+        }
+    }
+
+    private func set(_ hex: String?) {
+        HapticEngine.shared.tap()
+        withAnimation(.easeInOut(duration: 0.2)) {
+            cluster.highlightHex = (cluster.highlightHex == hex) ? nil : hex
+        }
     }
 }
 

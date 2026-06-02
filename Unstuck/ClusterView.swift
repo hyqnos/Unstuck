@@ -74,6 +74,16 @@ struct ClusterView: View {
                             style: StrokeStyle(lineWidth: 1, dash: [5, 4]))
             }
         }
+        // 🔦 User-chosen highlight — a neon glow ring (laser palette)
+        .overlay {
+            if let hex = cluster.highlightHex {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(Color(hex: hex), lineWidth: 1.5)
+                    .shadow(color: Color(hex: hex).opacity(0.85), radius: 7)
+                    .shadow(color: Color(hex: hex).opacity(0.5), radius: 15)
+                    .allowsHitTesting(false)
+            }
+        }
         // Tactile depth — a quick dip on touch, pops back on open
         .scaleEffect((breathing ? breathAmplitude : 1.0) * (1 - pressDepth * 0.06))
         .rotation3DEffect(.degrees(pressDepth * 5),
