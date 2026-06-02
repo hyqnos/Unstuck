@@ -233,6 +233,17 @@ extension BrainMapView {
         }
     }
 
+    @ViewBuilder var companionCorner: some View {
+        if settings.companionOn && survivalItem == nil && !showingBreadcrumbs
+            && !showOnboarding && !showDeck {
+            CompanionView()
+                .padding(.trailing, 22)
+                .padding(.bottom, 104)   // float above the capture bar
+                .transition(.scale(scale: 0.3).combined(with: .opacity))
+                .allowsHitTesting(true)
+        }
+    }
+
     @ViewBuilder var moodBadgeCorner: some View {
         if survivalItem == nil && !showingBreadcrumbs {
             MoodBadge(mode: mood.mode)

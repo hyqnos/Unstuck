@@ -327,6 +327,7 @@ struct BrainMapView: View {
         .overlay(alignment: .bottom) { rapidChipsOverlay }
         .overlay(alignment: .topTrailing) { cornerControls }
         .overlay(alignment: .topLeading) { moodBadgeCorner }
+        .overlay(alignment: .bottomTrailing) { companionCorner }
     }
 
 
