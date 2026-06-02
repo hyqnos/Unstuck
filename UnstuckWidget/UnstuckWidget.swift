@@ -80,8 +80,8 @@ struct FocusLockScreenView: View {
 }
 
 // MARK: - Widget (Live Activity configuration + Dynamic Island)
+// @main lives on UnstuckWidgetBundle (HomeWidget.swift), which lists both widgets.
 
-@main
 @available(iOS 16.1, *)
 struct UnstuckWidget: Widget {
     var body: some WidgetConfiguration {
