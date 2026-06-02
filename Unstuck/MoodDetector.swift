@@ -108,7 +108,17 @@ final class MoodDetector {
 
     // MARK: - Evaluation
 
+    /// Re-run classification immediately (e.g. after toggling adaptive mood).
+    func reevaluate() { evaluate() }
+
     private func evaluate() {
+        // No-demand mode: stay neutral, never read the user.
+        guard AppSettings.shared.adaptiveMood else {
+            candidateStreak = 0
+            if mode != .ready { withAnimation(.easeInOut(duration: 1.5)) { mode = .ready } }
+            return
+        }
+
         let hour        = Calendar.current.component(.hour, from: Date())
         let sessionMins = Date().timeIntervalSince(sessionStart) / 60
 

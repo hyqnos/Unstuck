@@ -32,6 +32,12 @@ final class AppSettings {
         didSet { UserDefaults.standard.set(companionOn, forKey: Self.companionKey) }
     }
 
+    /// Adaptive mood reading. Off = a no-demand neutral look that never tries to
+    /// read you — CLAUDE.md's "no-demand mode where the app only reflects."
+    var adaptiveMood: Bool {
+        didSet { UserDefaults.standard.set(adaptiveMood, forKey: Self.adaptiveKey) }
+    }
+
     // Convenience gates used throughout the app
     var calmMode: Bool   { sensory == .calm }
     var insaneMode: Bool { sensory == .insane }
@@ -40,6 +46,7 @@ final class AppSettings {
     private static let musicKey = "unstuck.focusMusic"
     private static let onboardKey = "unstuck.hasOnboarded"
     private static let companionKey = "unstuck.companionOn"
+    private static let adaptiveKey = "unstuck.adaptiveMood"
 
     private init() {
         let raw = UserDefaults.standard.string(forKey: Self.key)
@@ -48,6 +55,7 @@ final class AppSettings {
         hasOnboarded = UserDefaults.standard.bool(forKey: Self.onboardKey)
         // Default ON for new installs (key absent) so the presence is discovered.
         companionOn = UserDefaults.standard.object(forKey: Self.companionKey) as? Bool ?? true
+        adaptiveMood = UserDefaults.standard.object(forKey: Self.adaptiveKey) as? Bool ?? true
     }
 
     /// Cycle calm → normal → insane → calm

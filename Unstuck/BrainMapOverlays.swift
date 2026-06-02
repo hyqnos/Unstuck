@@ -300,6 +300,18 @@ extension BrainMapView {
             .accessibilityLabel("Companion")
             .accessibilityValue(settings.companionOn ? "on" : "off")
 
+            // Mood sensing — off keeps a calm neutral look (no-demand mode)
+            Button(action: toggleAdaptive) {
+                Image(systemName: settings.adaptiveMood ? "waveform.path.ecg" : "minus")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(.white.opacity(settings.adaptiveMood ? 0.85 : 0.4))
+                    .frame(width: 40, height: 40)
+                    .panel(Circle(), tint: settings.adaptiveMood ? .white.opacity(0.1) : nil)
+            }
+            .accessibilityLabel("Mood sensing")
+            .accessibilityValue(settings.adaptiveMood ? "on" : "off")
+            .accessibilityHint("When off, the look stays neutral")
+
             // Surprise me — kills decision paralysis
             Button(action: surpriseMe) {
                 Image(systemName: "dice")

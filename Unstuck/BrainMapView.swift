@@ -465,6 +465,13 @@ struct BrainMapView: View {
         }
     }
 
+    // Mood sensing on/off — off keeps a calm neutral look (no-demand mode)
+    func toggleAdaptive() {
+        HapticEngine.shared.tap()
+        settings.adaptiveMood.toggle()
+        mood.reevaluate()   // apply immediately
+    }
+
     // MARK: - Sensory dial (calm ↔ normal ↔ insane)
 
     func cycleSensory() {
