@@ -313,6 +313,14 @@ private struct DetailNode: View {
             }
         }
         .contentShape(Circle().size(CGSize(width: 60, height: 60)).offset(x: -25, y: -25))
+        .onTapGesture {
+            if let mins = item.estimatedMinutes {
+                HapticEngine.shared.tap()
+                FocusSessionController.shared.start(title: item.displayLabel, minutes: Double(mins))
+            } else {
+                HapticEngine.shared.settle()
+            }
+        }
         .onLongPressGesture(minimumDuration: 0.4, pressing: { isPressing in
             pressing = isPressing
             if isPressing { HapticEngine.shared.tap() }

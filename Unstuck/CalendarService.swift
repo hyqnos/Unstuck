@@ -249,17 +249,22 @@ final class CalendarService {
         guard granted else { return mockEvents(now) }
 
         let end = Calendar.current.date(byAdding: .day, value: 2, to: now) ?? now
-        let predicate = store.predicateForEvents(withStart: now, end: end, calendars: nil)
         let span = max(1, end.timeIntervalSince(now))
-        let real = store.events(matching: predicate)
-            .filter { !$0.isAllDay }
-            .map { e in
-                Ev(id: e.eventIdentifier ?? UUID().uuidString,
-                   title: e.title ?? "event", start: e.startDate, end: e.endDate,
-                   urgency: 1.0 - (e.startDate.timeIntervalSince(now) / span),
-                   clashes: false, moved: false,
-                   writable: e.calendar?.allowsContentModifications ?? false)
-            }
+        let eventStore = self.store
+        
+        let real: [Ev] = await Task.detached {
+            let predicate = eventStore.predicateForEvents(withStart: now, end: end, calendars: nil)
+            return eventStore.events(matching: predicate)
+                .filter { !$0.isAllDay }
+                .map { e in
+                    Ev(id: e.eventIdentifier ?? UUID().uuidString,
+                       title: e.title ?? "event", start: e.startDate, end: e.endDate,
+                       urgency: 1.0 - (e.startDate.timeIntervalSince(now) / span),
+                       clashes: false, moved: false,
+                       writable: e.calendar?.allowsContentModifications ?? false)
+                }
+        }.value
+        
         return real.isEmpty ? mockEvents(now) : real
     }
 

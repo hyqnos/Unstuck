@@ -143,7 +143,7 @@ final class SpatialAudioService {
                 return noErr
             }
         }
-        let monoFormat = AVAudioFormat(standardFormatWithSampleRate: sr, channels: 1)!
+        guard let monoFormat = AVAudioFormat(standardFormatWithSampleRate: sr, channels: 1) else { return }
         engine.attach(node)
         engine.connect(node, to: engine.mainMixerNode, format: monoFormat)   // centered bed
         padNode = node
@@ -191,7 +191,7 @@ final class SpatialAudioService {
     // MARK: - Feedback blips
 
     private func setupBlips() {
-        let monoFormat = AVAudioFormat(standardFormatWithSampleRate: 22050, channels: 1)!
+        guard let monoFormat = AVAudioFormat(standardFormatWithSampleRate: 22050, channels: 1) else { return }
 
         // Pre-render short enveloped tones (sin() here is fine — once, not in a loop)
         blipBuffers[.land]     = makeBlip(frequency: 440, duration: 0.16)
@@ -212,10 +212,13 @@ final class SpatialAudioService {
     private func makeBlip(frequency: Double, duration: Double) -> AVAudioPCMBuffer {
         let sr = 22050.0
         let frames = AVAudioFrameCount(sr * duration)
-        let fmt = AVAudioFormat(standardFormatWithSampleRate: sr, channels: 1)!
-        let buf = AVAudioPCMBuffer(pcmFormat: fmt, frameCapacity: frames)!
+        guard let fmt = AVAudioFormat(standardFormatWithSampleRate: sr, channels: 1),
+              let buf = AVAudioPCMBuffer(pcmFormat: fmt, frameCapacity: frames),
+              let ptr = buf.floatChannelData?[0] else {
+            // Return empty buffer on failure
+            return AVAudioPCMBuffer()
+        }
         buf.frameLength = frames
-        let ptr = buf.floatChannelData![0]
         let w = 2.0 * Double.pi * frequency / sr
         for i in 0..<Int(frames) {
             let t = Double(i) / sr
@@ -304,7 +307,7 @@ final class SpatialAudioService {
             }
         }
 
-        let format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1)!
+        guard let format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1) else { return }
         engine.attach(source)
         engine.connect(source, to: environment, format: format)
 

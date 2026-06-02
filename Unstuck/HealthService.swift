@@ -33,12 +33,13 @@ final class HealthService {
             return mock
         }
 
-        let types: Set<HKObjectType> = [
-            HKObjectType.quantityType(forIdentifier: .stepCount)!,
-            HKObjectType.quantityType(forIdentifier: .heartRate)!,
-            HKObjectType.quantityType(forIdentifier: .activeEnergyBurned)!,
-            HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!,
+        let typeIdentifiers: [HKObjectType?] = [
+            HKObjectType.quantityType(forIdentifier: .stepCount),
+            HKObjectType.quantityType(forIdentifier: .heartRate),
+            HKObjectType.quantityType(forIdentifier: .activeEnergyBurned),
+            HKObjectType.categoryType(forIdentifier: .sleepAnalysis)
         ]
+        let types = Set(typeIdentifiers.compactMap { $0 })
 
         do {
             try await store.requestAuthorization(toShare: [], read: types)
@@ -118,7 +119,7 @@ final class HealthService {
     private func fetchSleep() async -> HealthSnapshot? {
         guard let type = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else { return nil }
         let now = Date()
-        let yesterday = Calendar.current.date(byAdding: .hour, value: -18, to: now)!
+        guard let yesterday = Calendar.current.date(byAdding: .hour, value: -18, to: now) else { return nil }
         let predicate = HKQuery.predicateForSamples(withStart: yesterday, end: now)
 
         return await withCheckedContinuation { cont in

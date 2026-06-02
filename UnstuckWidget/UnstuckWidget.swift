@@ -81,6 +81,7 @@ struct FocusLockScreenView: View {
 
 // MARK: - Widget (Live Activity configuration + Dynamic Island)
 
+@main
 @available(iOS 16.1, *)
 struct UnstuckWidget: Widget {
     var body: some WidgetConfiguration {
