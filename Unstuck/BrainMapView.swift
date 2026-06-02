@@ -26,6 +26,7 @@ struct BrainMapView: View {
     @State var celebrateStart: Date? = nil     // per-completion rave (insane mode)
     @State var youTaps = 0                     // 🥚 secret stage taps
     @State var secretMessage: String? = nil
+    @State var webStart: Date? = nil           // 🥚 spider-web thwip
     @State var showOnboarding = !AppSettings.shared.hasOnboarded
     var voice = VoiceCapture()
     let motion = MotionAdaptor.shared
@@ -429,7 +430,17 @@ struct BrainMapView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { surpriseMe() }
         } else if t.contains("dopamine") || t.contains("serotonin") {
             HapticEngine.shared.fling(rotationRate: 8)   // a big, satisfying jolt
+        } else if t.contains("thwip") || t.contains("spiderman") || t.contains("spider-man") || t.contains("spidey") {
+            shootWeb()
         }
+    }
+
+    // 🥚 thwip — a web shoots out from YOU across the whole map
+    private func shootWeb() {
+        if settings.calmMode { HapticEngine.shared.reward(.soft); return }
+        HapticEngine.shared.reward(.rigid)   // sharp snap
+        webStart = Date()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.7) { webStart = nil }
     }
 
     // MARK: - Focus music

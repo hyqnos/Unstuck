@@ -41,6 +41,14 @@ extension BrainMapView {
         }
     }
 
+    @ViewBuilder var webOverlay: some View {
+        if let s = webStart {
+            WebShotView(start: s)
+                .zIndex(47)
+                .allowsHitTesting(false)
+        }
+    }
+
     @ViewBuilder var milestoneOverlay: some View {
         if let m = progression.pendingMilestone {
             MilestoneReveal(milestone: m) {
@@ -191,6 +199,7 @@ extension BrainMapView {
             introOverlay
             celebrateOverlay
             secretOverlay
+            webOverlay
             milestoneOverlay
             detailOverlay
             survivalOverlay
