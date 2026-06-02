@@ -23,7 +23,28 @@ struct LaserShowView: View {
          Color(red: 0.2, green: 1.0, blue: 0.4)]   // laser green
     }
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
+        // Photosensitivity safety: under Reduce Motion, replace the strobing show
+        // with a single calm, non-flashing bloom. Important for a release that can
+        // reach minors — strobe/flash is a seizure trigger; this never flickers.
+        if reduceMotion { calmGlow } else { strobe }
+    }
+
+    private var calmGlow: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 12.0)) { tl in
+            let t = tl.date.timeIntervalSince(start)
+            let p = max(0, min(1, t / max(0.1, duration)))
+            let a = sin(p * .pi) * 0.45            // one gentle bell — up then down
+            RadialGradient(colors: [color.opacity(a), .clear],
+                           center: .center, startRadius: 0, endRadius: 420)
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
+        }
+    }
+
+    private var strobe: some View {
         TimelineView(.animation) { tl in
             Canvas { ctx, size in
                 let t = tl.date.timeIntervalSince(start)

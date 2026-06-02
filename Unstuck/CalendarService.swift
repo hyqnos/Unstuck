@@ -139,6 +139,9 @@ final class CalendarService {
         }
         guard let event = store.event(withIdentifier: eventID) else { return false }
         guard event.calendar?.allowsContentModifications ?? false else { return false }
+        // Safety: never silently rewrite a recurring event — moving one occurrence can
+        // split or corrupt the whole series. Leave those to a visual overlay only.
+        guard !event.hasRecurrenceRules else { return false }
         event.startDate = newStart
         event.endDate = newStart.addingTimeInterval(duration)
         do { try store.save(event, span: .thisEvent, commit: true); return true }
