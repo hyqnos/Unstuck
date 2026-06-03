@@ -12,6 +12,7 @@ struct ClusterDetailView: View {
     @State private var clashes: [ClashSuggestion] = []
     @State private var lastMovedTitle: String? = nil   // for pull-to-undo after a move
     @State private var punchAt: Date? = nil            // claim screen-punch trigger
+    @State private var reelWhy: String? = nil          // big-tier reveal for hard tasks
     @FocusState private var focused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -128,6 +129,7 @@ struct ClusterDetailView: View {
         }
         .onTapGesture { focused = false }
         .overlay { if let t = punchAt { ClaimPunch(start: t).allowsHitTesting(false) } }
+        .overlay { if let why = reelWhy { RewardReel(whyLine: why) { withAnimation { reelWhy = nil } } } }
         .task {
             switch cluster.zoneType {
             case .health:
@@ -175,6 +177,7 @@ struct ClusterDetailView: View {
     }
 
     private func complete(_ item: BrainItem) {
+        let challenging = (item.estimatedMinutes ?? 0) >= 30   // the big ones you flagged
         withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
             item.state = .done
         }
@@ -183,12 +186,24 @@ struct ClusterDetailView: View {
         MoodDetector.shared.recordCompletion()
         Progression.shared.recordCompletion()
         NotificationCenter.default.post(name: .taskCompleted, object: nil)
-        // Screen punch — the small "loop closed" pop (bigger tiers ride the milestone reveal)
-        if !AppSettings.shared.calmMode && !reduceMotion {
-            punchAt = Date()
+
+        guard !AppSettings.shared.calmMode && !reduceMotion else { return }
+        if challenging {
+            reelWhy = Self.wallWhys.randomElement()   // the wall came down → big spinning reveal
+        } else {
+            punchAt = Date()                          // small "loop closed" pop
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { punchAt = nil }
         }
     }
+
+    // Real brain science for finishing a hard/dreaded task — universal, never a label.
+    private static let wallWhys = [
+        "a dreaded task done clears working-memory load — your brain just got room back.",
+        "the hardest part was starting. that resistance you felt is gone now.",
+        "finishing what you avoided drops the quiet stress it was costing you.",
+        "you proved the wall was climbable. your brain files that for next time.",
+        "the dread was bigger than the task. it usually is.",
+    ]
 }
 
 // MARK: - Full-screen node graph

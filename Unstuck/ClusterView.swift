@@ -12,6 +12,8 @@ struct ClusterView: View {
     @State private var breathing = false
     @State private var healthNodes: [HealthSnapshot] = []
     @State private var clashCount = 0   // calendar overlaps, for the gentle hint
+    @State private var resurface = false   // silent-reminder gentle breathing
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     // Tactile depth on touch (0 = resting, 0.5 = dipped in)
     @State private var pressDepth: CGFloat = 0
@@ -30,6 +32,14 @@ struct ClusterView: View {
     private var activeItems: [BrainItem] {
         cluster.items.filter { $0.state != .done }
     }
+
+    // A "silent reminder": the reminders section stays gently present in awareness
+    // (object permanence) — but ONLY when something's actually there, and only as a
+    // soft calm glow. Never a red pile, never a count, never "overdue" (RSD-safe).
+    private var isSilentReminder: Bool {
+        cluster.zoneType == .reminders && !activeItems.isEmpty
+    }
+    private let silentTint = Color(red: 0.40, green: 0.85, blue: 0.80)   // calm teal, not alarming
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -84,6 +94,17 @@ struct ClusterView: View {
                     .allowsHitTesting(false)
             }
         }
+        // 🔕 Silent reminder — a soft calm glow behind the card, gently breathing.
+        // Keeps the reminders section present without any guilt signal (RSD-safe).
+        .background {
+            if isSilentReminder {
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(silentTint.opacity(resurface ? 0.16 : 0.06))
+                    .blur(radius: 16)
+                    .scaleEffect(resurface ? 1.05 : 0.98)
+                    .allowsHitTesting(false)
+            }
+        }
         // VoiceOver: one element per cluster, reads its name + count, opens on activate
         .accessibilityElement(children: .ignore)
         .accessibilityAddTraits(.isButton)
@@ -104,6 +125,11 @@ struct ClusterView: View {
         .onAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + Double.random(in: 0...3)) {
                 breathing = true
+            }
+            if isSilentReminder && !reduceMotion {
+                withAnimation(.easeInOut(duration: 4.5).repeatForever(autoreverses: true)) {
+                    resurface = true
+                }
             }
         }
         .animation(.easeOut(duration: 0.25), value: highlighted)
