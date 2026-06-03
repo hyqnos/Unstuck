@@ -36,6 +36,7 @@ struct CompanionCorner: View {
             }
 
             companionBody
+                .contentShape(Rectangle())   // hit area over the transparent 3D view, so the long-press lands
                 .onLongPressGesture(minimumDuration: 0.4) {
                     HapticEngine.shared.reward(.soft)
                     withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) { showPicker.toggle() }
@@ -54,6 +55,7 @@ struct CompanionCorner: View {
             Live2DCompanion()                                     // Live2D slot (placeholder until a model)
         } else {
             Companion3D(character: settings.companionCharacter)   // native lion / fox / bear
+                .id(settings.companionCharacter)   // rebuild the SceneKit scene when the species changes
         }
     }
 
