@@ -10,6 +10,7 @@ struct CompanionCorner: View {
     private let mood = MoodDetector.shared
     private let settings = AppSettings.shared
     @State private var mutter: String? = nil
+    @State private var showPicker = false
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -25,13 +26,56 @@ struct CompanionCorner: View {
                     .onTapGesture { withAnimation(.easeOut(duration: 0.3)) { mutter = nil } }
                     .zIndex(1)
             }
-            Group {
-                if use3D { Companion3D() } else { CompanionView() }
+
+            // Character picker — long-press the companion to swap who's hanging out
+            if showPicker {
+                characterPicker
+                    .offset(y: -88)
+                    .transition(.scale(scale: 0.6, anchor: .bottom).combined(with: .opacity))
+                    .zIndex(2)
             }
+
+            companionBody
+                .onLongPressGesture(minimumDuration: 0.4) {
+                    HapticEngine.shared.reward(.soft)
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) { showPicker.toggle() }
+                }
         }
         .task { await museLoop() }
         .onReceive(NotificationCenter.default.publisher(for: .taskCompleted)) { _ in
             if !settings.calmMode, Bool.random() { say(Self.wins.randomElement() ?? "nice one.", for: 3) }
+        }
+    }
+
+    @ViewBuilder private var companionBody: some View {
+        if !use3D || settings.companionCharacter == .orb {
+            CompanionView()                                       // 2D (also Reduce-Motion path)
+        } else if settings.companionCharacter == .live2d {
+            Live2DCompanion()                                     // Live2D slot (placeholder until a model)
+        } else {
+            Companion3D(character: settings.companionCharacter)   // native lion / fox / bear
+        }
+    }
+
+    private var characterPicker: some View {
+        HStack(spacing: 6) {
+            ForEach(CompanionCharacter.allCases, id: \.self) { ch in
+                Button {
+                    HapticEngine.shared.tap()
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
+                        settings.companionCharacter = ch
+                        showPicker = false
+                    }
+                } label: {
+                    Text(ch.label)
+                        .font(.system(size: 9, weight: .medium, design: .monospaced))
+                        .foregroundStyle(settings.companionCharacter == ch ? .white : .white.opacity(0.5))
+                        .padding(.horizontal, 8).padding(.vertical, 6)
+                        .panel(Capsule(), tint: settings.companionCharacter == ch ? .white.opacity(0.15) : nil)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Companion: \(ch.label)")
+            }
         }
     }
 

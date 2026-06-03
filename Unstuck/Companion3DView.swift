@@ -9,6 +9,7 @@ import UIKit
 /// spin on a win), recolouring to the brain mode. A real rigged USDZ could
 /// replace `Coordinator.build` later — but this is genuine native 3D, today.
 struct Companion3D: View {
+    var character: CompanionCharacter = .lion
     private let mood = MoodDetector.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var celebrateTick = 0
@@ -23,7 +24,7 @@ struct Companion3D: View {
     }
 
     var body: some View {
-        CompanionSceneView(tint: uiTint, animate: !reduceMotion, celebrateTick: celebrateTick)
+        CompanionSceneView(tint: uiTint, animate: !reduceMotion, celebrateTick: celebrateTick, character: character)
             .frame(width: 66, height: 66)
             .onReceive(NotificationCenter.default.publisher(for: .taskCompleted)) { _ in
                 if !AppSettings.shared.calmMode { celebrateTick &+= 1 }
@@ -37,6 +38,7 @@ private struct CompanionSceneView: UIViewRepresentable {
     let tint: UIColor
     let animate: Bool
     let celebrateTick: Int
+    var character: CompanionCharacter = .lion
 
     func makeCoordinator() -> Coordinator { Coordinator() }
 
@@ -48,7 +50,7 @@ private struct CompanionSceneView: UIViewRepresentable {
         v.preferredFramesPerSecond = 30   // it's tiny — half the framerate, ~half the GPU/battery
         let scene = SCNScene()
         v.scene = scene
-        context.coordinator.build(in: scene, tint: tint, animate: animate)
+        context.coordinator.build(in: scene, tint: tint, animate: animate, character: character)
         return v
     }
 
@@ -76,7 +78,7 @@ private struct CompanionSceneView: UIViewRepresentable {
         var lastCelebrate = 0
         var timer: Timer?
 
-        func build(in scene: SCNScene, tint: UIColor, animate: Bool) {
+        func build(in scene: SCNScene, tint: UIColor, animate: Bool, character: CompanionCharacter = .lion) {
             // Camera
             let cam = SCNNode()
             cam.camera = SCNCamera()
@@ -102,10 +104,16 @@ private struct CompanionSceneView: UIViewRepresentable {
             maneMat.diffuse.contents = tint.adjust(0.65)
             snoutMat.diffuse.contents = tint.adjust(1.3)
 
-            // Body
+            // Body — proportioned per character
+            let bodyScale: SCNVector3
+            switch character {
+            case .bear: bodyScale = SCNVector3(1.08, 0.98, 0.98)   // chunkier
+            case .fox:  bodyScale = SCNVector3(0.90, 0.92, 0.94)   // leaner
+            default:    bodyScale = SCNVector3(1.0, 0.9, 0.9)
+            }
             let body = SCNNode(geometry: SCNSphere(radius: 1.0))
             body.geometry?.firstMaterial = bodyMat
-            body.scale = SCNVector3(1.0, 0.9, 0.9)
+            body.scale = bodyScale
             body.position = SCNVector3(0, -0.6, 0)
             root.addChildNode(body)
 
@@ -116,18 +124,34 @@ private struct CompanionSceneView: UIViewRepresentable {
             head.position = SCNVector3(0, 0.78, 0)
             root.addChildNode(head)
 
-            // Mane (lion cue) — a torus ringing the head
-            let mane = SCNNode(geometry: SCNTorus(ringRadius: 0.86, pipeRadius: 0.22))
-            mane.geometry?.firstMaterial = maneMat
-            mane.position = SCNVector3(0, 0, -0.12)
-            head.addChildNode(mane)
+            // Mane — lion only
+            if character == .lion {
+                let mane = SCNNode(geometry: SCNTorus(ringRadius: 0.86, pipeRadius: 0.22))
+                mane.geometry?.firstMaterial = maneMat
+                mane.position = SCNVector3(0, 0, -0.12)
+                head.addChildNode(mane)
+            }
 
-            // Ears
+            // Ears — shaped per character
             for sx in [Float(-1), Float(1)] {
-                let ear = SCNNode(geometry: SCNCone(topRadius: 0, bottomRadius: 0.26, height: 0.5))
+                let earGeo: SCNGeometry
+                let earPos: SCNVector3
+                let earTilt: Float
+                switch character {
+                case .fox:                                    // tall pointy ears
+                    earGeo = SCNCone(topRadius: 0, bottomRadius: 0.20, height: 0.72)
+                    earPos = SCNVector3(sx * 0.40, 0.82, 0); earTilt = -sx * 0.15
+                case .bear:                                   // small round ears
+                    earGeo = SCNSphere(radius: 0.22)
+                    earPos = SCNVector3(sx * 0.50, 0.74, 0); earTilt = 0
+                default:                                      // lion — medium cones
+                    earGeo = SCNCone(topRadius: 0, bottomRadius: 0.26, height: 0.5)
+                    earPos = SCNVector3(sx * 0.45, 0.72, 0); earTilt = -sx * 0.3
+                }
+                let ear = SCNNode(geometry: earGeo)
                 ear.geometry?.firstMaterial = headMat
-                ear.position = SCNVector3(sx * 0.45, 0.72, 0)
-                ear.eulerAngles = SCNVector3(0, 0, -sx * 0.3)
+                ear.position = earPos
+                ear.eulerAngles = SCNVector3(0, 0, earTilt)
                 head.addChildNode(ear)
             }
 
