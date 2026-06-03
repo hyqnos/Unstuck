@@ -233,6 +233,29 @@ extension BrainMapView {
         }
     }
 
+    @ViewBuilder var clusterPagerCorner: some View {
+        if survivalItem == nil && !showingBreadcrumbs && !showOnboarding
+            && !showDeck && focusedCluster == nil {
+            ClusterPager(
+                clusters: clusters.sorted { $0.createdAt < $1.createdAt },
+                index: $pagerIndex,
+                onFly: { c in
+                    // exact center: panOffset = size * (0.5 - normalizedPos), scale/rotation-independent
+                    withAnimation(.spring(response: 0.6, dampingFraction: 0.85)) {
+                        panOffset = CGSize(width:  mapSize.width  * (0.5 - c.positionX),
+                                           height: mapSize.height * (0.5 - c.positionY))
+                        mapRotation = .zero
+                    }
+                },
+                onOpen: { c in
+                    withAnimation(.spring(response: 0.42, dampingFraction: 0.78)) { focusedCluster = c }
+                }
+            )
+            .padding(.top, 106)   // sits just below the corner controls / mood badge
+            .transition(.move(edge: .top).combined(with: .opacity))
+        }
+    }
+
     @ViewBuilder var companionCorner: some View {
         if settings.companionOn && survivalItem == nil && !showingBreadcrumbs
             && !showOnboarding && !showDeck {

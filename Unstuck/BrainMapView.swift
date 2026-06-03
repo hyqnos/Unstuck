@@ -22,6 +22,7 @@ struct BrainMapView: View {
     @State var mapSize: CGSize = .zero         // cached for collision-avoidance
     @State var overviewMode = false            // four-finger constellation overview
     @State var showDeck = false                // expanding card-deck browse fidget
+    @State var pagerIndex = 0                   // on-map cluster pager position
     @Environment(\.accessibilityReduceMotion) var reduceMotion
     @State var showIntro = false               // launch laser show
     @State var introStart = Date()
@@ -328,6 +329,7 @@ struct BrainMapView: View {
         .overlay(alignment: .bottom) { rapidChipsOverlay }
         .overlay(alignment: .topTrailing) { cornerControls }
         .overlay(alignment: .topLeading) { moodBadgeCorner }
+        .overlay(alignment: .top) { clusterPagerCorner }
         .overlay(alignment: .bottomTrailing) { companionCorner }
     }
 
