@@ -213,21 +213,16 @@ private struct NodeGraph: View {
             let allPositions    = itemPositions + healthPositions
 
             ZStack {
-                // Lines
+                // Constellation lines — a MINIMUM SPANNING TREE (Prim's): every node
+                // connected, no cycles, minimal total length. Gives a clean shape every
+                // time instead of an all-pairs web that clutters when nodes bunch up.
                 Canvas { ctx, _ in
-                    for i in 0..<allPositions.count {
-                        for j in (i + 1)..<allPositions.count {
-                            let threshold = (size.width + size.height) * 0.3
-                            let dx = allPositions[i].x - allPositions[j].x
-                            let dy = allPositions[i].y - allPositions[j].y
-                            let dist = sqrt(dx * dx + dy * dy)
-                            guard dist < threshold else { continue }
-                            var path = Path()
-                            path.move(to: allPositions[i])
-                            path.addLine(to: allPositions[j])
-                            ctx.stroke(path, with: .color(.white.opacity(0.1)),
-                                       style: StrokeStyle(lineWidth: 0.7))
-                        }
+                    for (i, j) in Self.mst(allPositions) {
+                        var path = Path()
+                        path.move(to: allPositions[i])
+                        path.addLine(to: allPositions[j])
+                        ctx.stroke(path, with: .color(.white.opacity(0.16)),
+                                   style: StrokeStyle(lineWidth: 0.8))
                     }
                 }
 
@@ -257,13 +252,38 @@ private struct NodeGraph: View {
         return (0..<count).map { i in
             let idx = i + offset
             guard idx > 0 else { return CGPoint(x: cx, y: cy) }
-            let angle = Double(idx) * 2.399963
-            let r = maxR * (0.4 + 0.6 * CGFloat(idx) / CGFloat(Swift.max(1, totalCount - 1)))
+            // Vogel's sunflower model — golden-angle spiral with a √-radius so the nodes
+            // spread with EVEN area density (no empty centre, no crowded rim).
+            let angle = Double(idx) * 2.399963            // golden angle, in radians
+            let r = maxR * sqrt(CGFloat(idx) / CGFloat(Swift.max(1, totalCount - 1)))
             return CGPoint(
                 x: (cx + CGFloat(cos(angle)) * r).clamped(to: padding...(size.width - padding)),
                 y: (cy + CGFloat(sin(angle)) * r).clamped(to: padding...(size.height - padding))
             )
         }
+    }
+
+    /// Minimum spanning tree of the node points (Prim's algorithm, O(n²) — fine for a
+    /// handful of nodes). Edge weight = squared Euclidean distance. Returns the (i, j)
+    /// pairs to draw — a connected, crossing-free-ish constellation.
+    static func mst(_ pts: [CGPoint]) -> [(Int, Int)] {
+        guard pts.count > 1 else { return [] }
+        var inTree = [Bool](repeating: false, count: pts.count)
+        var edges: [(Int, Int)] = []
+        inTree[0] = true
+        for _ in 1..<pts.count {
+            var best = (-1, -1)
+            var bestD = CGFloat.greatestFiniteMagnitude
+            for i in pts.indices where inTree[i] {
+                for j in pts.indices where !inTree[j] {
+                    let dx = pts[i].x - pts[j].x, dy = pts[i].y - pts[j].y
+                    let d = dx * dx + dy * dy
+                    if d < bestD { bestD = d; best = (i, j) }
+                }
+            }
+            if best.1 >= 0 { inTree[best.1] = true; edges.append(best) }
+        }
+        return edges
     }
 }
 

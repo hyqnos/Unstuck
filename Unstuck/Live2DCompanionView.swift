@@ -43,48 +43,55 @@ private struct Live2DWebView: UIViewRepresentable {
     <!doctype html><html><head><meta name='viewport' content='width=device-width,initial-scale=1'>
     <style>
       html,body{margin:0;height:100%;background:transparent;overflow:hidden;
-        display:flex;align-items:flex-end;justify-content:center}
-      .stage{width:200px;height:260px;filter:drop-shadow(0 6px 14px rgba(0,200,170,.35))}
-      .sway{transform-origin:100px 240px;animation:sway 6s ease-in-out infinite}
-      .breathe{transform-origin:100px 240px;animation:breathe 3.4s ease-in-out infinite}
-      @keyframes sway{0%,100%{transform:rotate(-2.5deg)}50%{transform:rotate(2.5deg)}}
-      @keyframes breathe{0%,100%{transform:scale(1) translateY(0)}50%{transform:scale(1.035) translateY(-5px)}}
-      .eye{transform-origin:center;transform-box:fill-box;animation:blink 4.8s infinite}
-      .eye.b{animation-delay:.06s}
-      @keyframes blink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.08)}}
-      .hair{transform-origin:100px 60px;animation:hairwave 4s ease-in-out infinite}
-      @keyframes hairwave{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(2.5deg)}}
+        display:flex;align-items:center;justify-content:center}
+      .stage{width:220px;height:270px}
+      .glow{transform-origin:110px 132px;animation:pulse 2.6s ease-in-out infinite}
+      @keyframes pulse{0%,100%{opacity:.45;transform:scale(1)}50%{opacity:.85;transform:scale(1.08)}}
+      .creature{transform-origin:110px 200px;animation:float 3s ease-in-out infinite}
+      @keyframes float{0%,100%{transform:translateY(2px) rotate(-2deg)}50%{transform:translateY(-9px) rotate(2deg)}}
+      .orbit{transform-origin:110px 132px;animation:spin 9s linear infinite}
+      @keyframes spin{to{transform:rotate(360deg)}}
+      .twk{animation:tw 1.8s ease-in-out infinite}
+      @keyframes tw{0%,100%{opacity:.3;transform:scale(.7)}50%{opacity:1;transform:scale(1.2)}}
+      .lid{transform-origin:center;transform-box:fill-box;animation:wink 4.6s infinite}
+      @keyframes wink{0%,90%,100%{transform:scaleY(0)}94%{transform:scaleY(1)}}
+      .bolt{transform-origin:110px 56px;animation:zap 2.4s ease-in-out infinite}
+      @keyframes zap{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(5deg)}}
     </style></head>
     <body>
-    <svg class='stage' viewBox='0 0 200 260' xmlns='http://www.w3.org/2000/svg'>
+    <svg class='stage' viewBox='0 0 220 270' xmlns='http://www.w3.org/2000/svg'>
      <defs>
-      <radialGradient id='head' cx='42%' cy='34%' r='78%'>
-       <stop offset='0%' stop-color='#9af7e0'/><stop offset='58%' stop-color='#46d9b8'/><stop offset='100%' stop-color='#2bb89a'/>
+      <radialGradient id='bodyG' cx='40%' cy='32%' r='80%'>
+       <stop offset='0%' stop-color='#7df9ff'/><stop offset='45%' stop-color='#36c6ff'/><stop offset='100%' stop-color='#7a4dff'/>
       </radialGradient>
-      <linearGradient id='body' x1='0' y1='0' x2='0' y2='1'>
-       <stop offset='0%' stop-color='#3fd0af'/><stop offset='100%' stop-color='#1f9e84'/>
+      <radialGradient id='aura' cx='50%' cy='50%' r='50%'>
+       <stop offset='0%' stop-color='#4ad9ff' stop-opacity='.7'/><stop offset='100%' stop-color='#4ad9ff' stop-opacity='0'/>
+      </radialGradient>
+      <linearGradient id='boltG' x1='0' y1='0' x2='0' y2='1'>
+       <stop offset='0%' stop-color='#fff27a'/><stop offset='100%' stop-color='#ffb13d'/>
       </linearGradient>
      </defs>
-     <g class='sway'><g class='breathe'>
-       <ellipse cx='100' cy='212' rx='54' ry='46' fill='url(#body)'/>
-       <ellipse cx='54' cy='206' rx='13' ry='19' fill='#2bb89a'/>
-       <ellipse cx='146' cy='206' rx='13' ry='19' fill='#2bb89a'/>
-       <ellipse cx='34' cy='112' rx='14' ry='21' fill='#2bb89a'/>
-       <ellipse cx='166' cy='112' rx='14' ry='21' fill='#2bb89a'/>
-       <ellipse cx='100' cy='120' rx='74' ry='68' fill='url(#head)'/>
-       <g class='hair' fill='#26a98e'>
-         <path d='M100 54 q-12 -24 -28 -10 q15 3 17 17 z'/>
-         <path d='M100 52 q5 -26 24 -14 q-15 4 -15 19 z'/>
-         <ellipse cx='100' cy='58' rx='11' ry='13'/>
+     <circle class='glow' cx='110' cy='132' r='92' fill='url(#aura)'/>
+     <g class='orbit'>
+       <path class='twk' d='M196 132 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3 z' fill='#bff6ff'/>
+       <path class='twk' style='animation-delay:.6s' d='M24 120 l2.4 5 5 2.4 -5 2.4 -2.4 5 -2.4 -5 -5 -2.4 5 -2.4 z' fill='#cfa8ff'/>
+       <path class='twk' style='animation-delay:1.1s' d='M110 36 l2 4.5 4.5 2 -4.5 2 -2 4.5 -2 -4.5 -4.5 -2 4.5 -2 z' fill='#fff27a'/>
+     </g>
+     <g class='creature'>
+       <path d='M110 60 C56 60 44 104 44 138 C44 184 72 214 110 214 C148 214 176 184 176 138 C176 104 164 60 110 60 Z'
+             fill='url(#bodyG)' stroke='#bdf6ff' stroke-opacity='.35' stroke-width='1.5'/>
+       <path class='bolt' d='M104 34 l16 0 -8 14 12 0 -22 26 6 -18 -10 0 z' fill='url(#boltG)' stroke='#fff' stroke-opacity='.3' stroke-width='1'/>
+       <g transform='rotate(-8 84 128)'>
+         <ellipse cx='84' cy='128' rx='16' ry='20' fill='#0c1430'/>
+         <circle cx='88' cy='132' r='9.5' fill='#7df9ff'/><circle cx='91' cy='127' r='3.6' fill='#fff'/>
+         <rect class='lid' x='66' y='106' width='36' height='44' rx='14' fill='url(#bodyG)'/>
        </g>
-       <ellipse cx='58' cy='140' rx='13' ry='9' fill='#ff8fb0' opacity='.5'/>
-       <ellipse cx='142' cy='140' rx='13' ry='9' fill='#ff8fb0' opacity='.5'/>
-       <g class='eye'><ellipse cx='72' cy='118' rx='15' ry='19' fill='#fff'/>
-         <circle cx='74' cy='122' r='9' fill='#16312b'/><circle cx='78' cy='117' r='3.2' fill='#fff'/></g>
-       <g class='eye b'><ellipse cx='128' cy='118' rx='15' ry='19' fill='#fff'/>
-         <circle cx='126' cy='122' r='9' fill='#16312b'/><circle cx='130' cy='117' r='3.2' fill='#fff'/></g>
-       <path d='M88 150 q12 13 24 0' stroke='#16312b' stroke-width='3' fill='none' stroke-linecap='round'/>
-     </g></g>
+       <g transform='rotate(8 136 128)'>
+         <ellipse cx='136' cy='128' rx='16' ry='20' fill='#0c1430'/>
+         <circle cx='132' cy='132' r='9.5' fill='#7df9ff'/><circle cx='135' cy='127' r='3.6' fill='#fff'/>
+       </g>
+       <path d='M92 162 q16 16 40 4' stroke='#0c1430' stroke-width='4' fill='none' stroke-linecap='round'/>
+     </g>
     </svg>
     </body></html>
     """
