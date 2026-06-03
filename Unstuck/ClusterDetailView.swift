@@ -11,7 +11,9 @@ struct ClusterDetailView: View {
     @State private var healthNodes: [HealthSnapshot] = []
     @State private var clashes: [ClashSuggestion] = []
     @State private var lastMovedTitle: String? = nil   // for pull-to-undo after a move
+    @State private var punchAt: Date? = nil            // claim screen-punch trigger
     @FocusState private var focused: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var activeItems: [BrainItem] {
         cluster.items.filter { $0.state != .done }
@@ -125,6 +127,7 @@ struct ClusterDetailView: View {
             }
         }
         .onTapGesture { focused = false }
+        .overlay { if let t = punchAt { ClaimPunch(start: t).allowsHitTesting(false) } }
         .task {
             switch cluster.zoneType {
             case .health:
@@ -175,11 +178,16 @@ struct ClusterDetailView: View {
         withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
             item.state = .done
         }
-        HapticEngine.shared.complete()
+        // Haptic burst is fired by the hold-to-claim itself (DetailNode.claim).
         SpatialAudioService.shared.playBlip(.complete, atX: cluster.positionX, y: cluster.positionY)
         MoodDetector.shared.recordCompletion()
         Progression.shared.recordCompletion()
         NotificationCenter.default.post(name: .taskCompleted, object: nil)
+        // Screen punch — the small "loop closed" pop (bigger tiers ride the milestone reveal)
+        if !AppSettings.shared.calmMode && !reduceMotion {
+            punchAt = Date()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { punchAt = nil }
+        }
     }
 }
 
@@ -273,6 +281,9 @@ private struct DetailNode: View {
     let onComplete: () -> Void
 
     @State private var pressing = false
+    @State private var holdProgress: CGFloat = 0
+    @State private var claimed = false
+    @State private var rampTask: Task<Void, Never>? = nil
 
     var body: some View {
         VStack(spacing: 5) {
@@ -294,6 +305,15 @@ private struct DetailNode: View {
                     .shadow(color: .white.opacity(0.35), radius: pressing ? 8 : 3)
                     .scaleEffect(pressing ? 1.4 : 1.0)
                     .animation(.spring(response: 0.25, dampingFraction: 0.6), value: pressing)
+
+                // Hold-to-claim charging ring — fills as you hold; release early = no harm
+                Circle()
+                    .trim(from: 0, to: holdProgress)
+                    .stroke(Color(red: 0.30, green: 0.95, blue: 0.70),
+                            style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                    .frame(width: 26, height: 26)
+                    .rotationEffect(.degrees(-90))
+                    .shadow(color: Color(red: 0.30, green: 0.95, blue: 0.70).opacity(Double(holdProgress)), radius: 5)
             }
 
             VStack(spacing: 2) {
@@ -327,10 +347,37 @@ private struct DetailNode: View {
                 HapticEngine.shared.settle()
             }
         }
-        .onLongPressGesture(minimumDuration: 0.4, pressing: { isPressing in
+        .onLongPressGesture(minimumDuration: 0.8, maximumDistance: 40, pressing: { isPressing in
             pressing = isPressing
-            if isPressing { HapticEngine.shared.tap() }
-        }, perform: onComplete)
+            if isPressing { beginRamp() } else if !claimed { cancelRamp() }
+        }, perform: claim)
+    }
+
+    // MARK: - Hold-to-claim (charge → claim). Honest: only completes a real task.
+    private func beginRamp() {
+        claimed = false
+        HapticEngine.shared.tap()
+        withAnimation(.linear(duration: 0.8)) { holdProgress = 1.0 }
+        rampTask = Task { @MainActor in
+            let steps = 12
+            for s in 1...steps {
+                try? await Task.sleep(for: .seconds(0.8 / Double(steps)))
+                if Task.isCancelled { return }
+                if !AppSettings.shared.calmMode { HapticEngine.shared.chargeTick(Double(s) / Double(steps)) }
+            }
+        }
+    }
+    private func cancelRamp() {
+        rampTask?.cancel(); rampTask = nil
+        withAnimation(.easeOut(duration: 0.2)) { holdProgress = 0 }
+    }
+    private func claim() {
+        claimed = true
+        rampTask?.cancel(); rampTask = nil
+        if AppSettings.shared.calmMode { HapticEngine.shared.reward(.soft) }
+        else { HapticEngine.shared.claimBurst() }
+        withAnimation(.easeOut(duration: 0.3)) { holdProgress = 0 }
+        onComplete()
     }
 }
 
@@ -506,6 +553,34 @@ private struct HighlightRow: View {
         HapticEngine.shared.tap()
         withAnimation(.easeInOut(duration: 0.2)) {
             cluster.highlightHex = (cluster.highlightHex == hex) ? nil : hex
+        }
+    }
+}
+
+// MARK: - Claim screen-punch — a quick celebratory pop on completion (RSD-safe, calm-/motion-gated)
+
+private struct ClaimPunch: View {
+    let start: Date
+    private let tint = Color(red: 0.30, green: 0.95, blue: 0.70)
+    var body: some View {
+        TimelineView(.animation) { tl in
+            let t = tl.date.timeIntervalSince(start)
+            let p = max(0, min(1, t / 0.5))
+            let ease = 1 - pow(1 - p, 3)
+            ZStack {
+                Color.white.opacity((1 - p) * 0.10)                 // brief flash
+                Circle()                                            // expanding ring
+                    .stroke(tint.opacity((1 - p) * 0.85), lineWidth: 3 * (1 - p) + 0.5)
+                    .frame(width: 40 + ease * 280, height: 40 + ease * 280)
+                ForEach(0..<10, id: \.self) { i in                  // sparkles fly outward
+                    let a = Double(i) / 10 * 2 * .pi
+                    Circle().fill(.white.opacity(1 - p))
+                        .frame(width: 4, height: 4)
+                        .offset(x: cos(a) * (30 + ease * 170), y: sin(a) * (30 + ease * 170))
+                }
+            }
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
         }
     }
 }
