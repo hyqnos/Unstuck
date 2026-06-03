@@ -24,7 +24,7 @@ struct Companion3D: View {
 
     var body: some View {
         CompanionSceneView(tint: uiTint, animate: !reduceMotion, celebrateTick: celebrateTick)
-            .frame(width: 78, height: 78)
+            .frame(width: 66, height: 66)
             .onReceive(NotificationCenter.default.publisher(for: .taskCompleted)) { _ in
                 if !AppSettings.shared.calmMode { celebrateTick &+= 1 }
             }

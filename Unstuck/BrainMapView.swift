@@ -575,7 +575,7 @@ struct BrainMapView: View {
             (.reminders,      "reminders",  0.25, 0.22),
             (.health,         "health",     0.75, 0.22),
             (.timeManagement, "time",       0.25, 0.72),
-            (.routines,       "routines",   0.75, 0.72),
+            (.routines,       "routines",   0.50, 0.80),   // bottom-centre — leaves the bottom-right corner for the companion
             (.ideas,          "ideas",      0.50, 0.12),
             (.captures,       "captures",   0.12, 0.50),
             (.someday,        "someday",    0.88, 0.50),
