@@ -9,7 +9,8 @@ struct QuickCaptureBar: View {
     var body: some View {
         HStack(spacing: 12) {
             TextField("thought...", text: $text)
-                .font(.system(size: 15, design: .monospaced))
+                .font(.system(.callout, design: .monospaced))   // scales with Dynamic Type
+                .dynamicTypeSize(...DynamicTypeSize.accessibility2)
                 .foregroundStyle(.white)
                 .tint(.white)
                 .focused($focused)

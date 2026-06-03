@@ -36,7 +36,8 @@ struct OnboardingView: View {
                 .offset(y: -150)
 
             Text(lines[step])
-                .font(.system(size: 20, weight: .light, design: .monospaced))
+                .font(.system(.title3, design: .monospaced, weight: .light))   // scales with Dynamic Type
+                .dynamicTypeSize(...DynamicTypeSize.accessibility3)
                 .foregroundStyle(.white.opacity(0.88))
                 .multilineTextAlignment(.center)
                 .lineSpacing(7)

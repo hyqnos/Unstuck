@@ -101,7 +101,8 @@ struct ClusterDetailView: View {
 
                     HStack(spacing: 12) {
                         TextField("add a node...", text: $captureText)
-                            .font(.system(size: 14, design: .monospaced))
+                            .font(.system(.callout, design: .monospaced))
+                            .dynamicTypeSize(...DynamicTypeSize.accessibility2)
                             .foregroundStyle(.white)
                             .tint(.white)
                             .focused($focused)
