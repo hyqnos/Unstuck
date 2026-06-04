@@ -51,7 +51,8 @@ struct ClusterDetailView: View {
                 .padding(.bottom, 16)
 
                 // Graph
-                DetailGraph(items: activeItems, healthNodes: healthNodes, onComplete: complete)
+                DetailGraph(items: activeItems, healthNodes: healthNodes, onComplete: complete,
+                            onCompleteReminder: completeReminder)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 // Overlap suggestions — gentle, pattern-based, never a command
@@ -117,6 +118,15 @@ struct ClusterDetailView: View {
                                     .font(.system(size: 22))
                                     .foregroundStyle(.white.opacity(0.6))
                             }
+                            // In time/reminders clusters, also push it to the real Reminders.
+                            if cluster.zoneType == .reminders || cluster.zoneType == .timeManagement {
+                                Button(action: sendToReminders) {
+                                    Image(systemName: "bell.badge.fill")
+                                        .font(.system(size: 20))
+                                        .foregroundStyle(Color(red: 0.3, green: 0.85, blue: 0.75).opacity(0.85))
+                                }
+                                .accessibilityLabel("Also send to Reminders")
+                            }
                         }
                     }
                     .padding(.horizontal, 20)
@@ -158,6 +168,27 @@ struct ClusterDetailView: View {
         captureText = ""
         estimateMinutes = nil
         HapticEngine.shared.reward(.light)
+    }
+
+    /// Also push the captured text to the real Reminders (cross-platform via EventKit),
+    /// while keeping it on the map. User-tapped → a pull, never a demand.
+    private func sendToReminders() {
+        let trimmed = captureText.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return }
+        addNode()   // keep it on the map too (this clears captureText)
+        Task {
+            let ok = await CalendarService.shared.createReminder(title: trimmed)
+            HapticEngine.shared.reward(ok ? .success : .warning)
+        }
+    }
+
+    /// Tap a reminder node → mark it done in the real Reminders app, then refresh.
+    private func completeReminder(_ id: String) {
+        HapticEngine.shared.reward(.success)
+        Task {
+            _ = await CalendarService.shared.completeReminder(id: id)
+            healthNodes = await CalendarService.shared.fetchUpcoming(forceRefresh: true)
+        }
     }
 
     private func resolveClash(keep: String, drop: String) {
@@ -220,6 +251,7 @@ private struct DetailGraph: View {
     let items: [BrainItem]
     var healthNodes: [HealthSnapshot] = []
     let onComplete: (BrainItem) -> Void
+    var onCompleteReminder: (String) -> Void = { _ in }
 
     private var totalCount: Int { items.count + healthNodes.count }
 
@@ -269,7 +301,9 @@ private struct DetailGraph: View {
 
                     // Live health nodes — glowing teal, read-only
                     ForEach(Array(healthNodes.enumerated()), id: \.offset) { idx, node in
-                        HealthNode(snapshot: node)
+                        HealthNode(snapshot: node, onComplete: {
+                            if let id = node.reminderID { onCompleteReminder(id) }
+                        })
                             .position(healthPositions[idx])
                             .transition(.scale(scale: 0.1).combined(with: .opacity))
                     }
@@ -408,6 +442,7 @@ private struct DetailNode: View {
 
 private struct HealthNode: View {
     let snapshot: HealthSnapshot
+    var onComplete: () -> Void = {}
     @State private var pulse = false
 
     var body: some View {
@@ -435,6 +470,9 @@ private struct HealthNode: View {
                 .lineLimit(1)
                 .fixedSize()
         }
+        .contentShape(Rectangle())
+        // Reminder nodes are tappable to mark done; health nodes (steps/sleep) are read-only.
+        .onTapGesture { if snapshot.reminderID != nil { onComplete() } }
         .onAppear {
             withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
                 pulse = true

@@ -88,7 +88,8 @@ final class CalendarService {
                     label: "\(timeString(e.start)) \(short(e.title))",
                     icon: e.clashes ? "exclamationmark.2" : baseIcon,
                     urgency: e.clashes ? 0.9 : clamp(e.urgency),
-                    tint: e.clashes ? amber : teal)
+                    tint: e.clashes ? amber : teal,
+                    reminderID: e.isReminder ? e.id : nil)   // tappable to mark done
             }
 
         let final = Array(nodes)
@@ -160,6 +161,47 @@ final class CalendarService {
         event.endDate = newStart.addingTimeInterval(duration)
         do { try store.save(event, span: .thisEvent, commit: true); return true }
         catch { return false }
+    }
+
+    // MARK: - Create / complete (user-initiated write-back; a pull, never a push)
+
+    /// Create a real reminder in the user's default list. EventKit writes it through to
+    /// the source account (Apple / Google / etc.). Returns false if access is denied.
+    func createReminder(title: String, due: Date? = nil) async -> Bool {
+        let granted = await withCheckedContinuation { (c: CheckedContinuation<Bool, Never>) in
+            store.requestFullAccessToReminders { ok, _ in c.resume(returning: ok) }
+        }
+        guard granted, let list = store.defaultCalendarForNewReminders() else { return false }
+        let r = EKReminder(eventStore: store)
+        r.title = title; r.calendar = list
+        if let due {
+            r.dueDateComponents = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: due)
+        }
+        do { try store.save(r, commit: true); cached = nil; return true } catch { return false }
+    }
+
+    /// Create a real calendar event in the default calendar (→ source account).
+    func createEvent(title: String, start: Date, duration: TimeInterval = 3600) async -> Bool {
+        let granted = await withCheckedContinuation { (c: CheckedContinuation<Bool, Never>) in
+            store.requestFullAccessToEvents { ok, _ in c.resume(returning: ok) }
+        }
+        guard granted, let cal = store.defaultCalendarForNewEvents else { return false }
+        let e = EKEvent(eventStore: store)
+        e.title = title; e.startDate = start; e.endDate = start.addingTimeInterval(duration); e.calendar = cal
+        do { try store.save(e, span: .thisEvent, commit: true); cached = nil; return true } catch { return false }
+    }
+
+    /// Mark a reminder done (writes back), then live-refresh so it leaves the map.
+    func completeReminder(id: String) async -> Bool {
+        guard let r = store.calendarItem(withIdentifier: id) as? EKReminder,
+              r.calendar?.allowsContentModifications ?? false else { return false }
+        r.isCompleted = true
+        do {
+            try store.save(r, commit: true)
+            cached = nil
+            NotificationCenter.default.post(name: .calendarDataChanged, object: nil)
+            return true
+        } catch { return false }
     }
 
     // MARK: - Sweep-line clash detection (O(n log n) + O(n))

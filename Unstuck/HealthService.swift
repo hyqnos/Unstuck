@@ -9,6 +9,7 @@ struct HealthSnapshot {
     let icon: String        // SF Symbol name
     let urgency: Double     // 0–1 for map gravity
     var tint: Color? = nil  // nil = default teal
+    var reminderID: String? = nil  // set for reminder nodes → tap to mark done
 }
 
 @MainActor
