@@ -17,9 +17,12 @@ public struct ClusterSummary: Codable, Identifiable, Hashable {
 /// `nonisolated` throughout: the widget's TimelineProvider and the cycle intent call
 /// this from non-main contexts. It's just App-Group `UserDefaults` access.
 public enum SharedClusterStore {
-    public static let appGroup = "group.Dopa.Unstuck"
-    private static let kSummaries = "cluster.summaries"
-    private static let kIndex = "cluster.index"
+    // nonisolated computed constants — under MainActor-default isolation, plain
+    // `static let`s would be actor-isolated and unreachable from the widget's
+    // nonisolated TimelineProvider / AppIntent. Computed nonisolated keeps them free.
+    nonisolated public static var appGroup: String { "group.Dopa.Unstuck" }
+    nonisolated private static var kSummaries: String { "cluster.summaries" }
+    nonisolated private static var kIndex: String { "cluster.index" }
 
     nonisolated private static var defaults: UserDefaults? { UserDefaults(suiteName: appGroup) }
 
