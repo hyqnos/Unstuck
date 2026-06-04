@@ -213,11 +213,12 @@ private struct NodeGraph: View {
             let allPositions    = itemPositions + healthPositions
 
             ZStack {
-                // Constellation lines — a MINIMUM SPANNING TREE (Prim's): every node
-                // connected, no cycles, minimal total length. Gives a clean shape every
-                // time instead of an all-pairs web that clutters when nodes bunch up.
+                // Constellation lines — a RELATIVE NEIGHBOURHOOD GRAPH: keep edge i–j only
+                // if no third node sits in their "lune" (closer to both than they are to
+                // each other). It always contains the spanning tree (so it stays connected)
+                // but adds the locally-meaningful edges → a fuller, still crossing-free shape.
                 Canvas { ctx, _ in
-                    for (i, j) in Self.mst(allPositions) {
+                    for (i, j) in Self.rng(allPositions) {
                         var path = Path()
                         path.move(to: allPositions[i])
                         path.addLine(to: allPositions[j])
@@ -263,25 +264,26 @@ private struct NodeGraph: View {
         }
     }
 
-    /// Minimum spanning tree of the node points (Prim's algorithm, O(n²) — fine for a
-    /// handful of nodes). Edge weight = squared Euclidean distance. Returns the (i, j)
-    /// pairs to draw — a connected, crossing-free-ish constellation.
-    static func mst(_ pts: [CGPoint]) -> [(Int, Int)] {
+    /// Relative neighbourhood graph (O(n³), fine for a handful of nodes). Edge i–j is
+    /// kept iff no other node k is closer to BOTH endpoints than they are to each other
+    /// — i.e. the lune between them is empty. Always contains the minimum spanning tree,
+    /// so the constellation stays connected, but it's richer and crossing-free.
+    static func rng(_ pts: [CGPoint]) -> [(Int, Int)] {
         guard pts.count > 1 else { return [] }
-        var inTree = [Bool](repeating: false, count: pts.count)
+        func d2(_ a: Int, _ b: Int) -> CGFloat {
+            let dx = pts[a].x - pts[b].x, dy = pts[a].y - pts[b].y
+            return dx * dx + dy * dy
+        }
         var edges: [(Int, Int)] = []
-        inTree[0] = true
-        for _ in 1..<pts.count {
-            var best = (-1, -1)
-            var bestD = CGFloat.greatestFiniteMagnitude
-            for i in pts.indices where inTree[i] {
-                for j in pts.indices where !inTree[j] {
-                    let dx = pts[i].x - pts[j].x, dy = pts[i].y - pts[j].y
-                    let d = dx * dx + dy * dy
-                    if d < bestD { bestD = d; best = (i, j) }
+        for i in pts.indices {
+            for j in (i + 1)..<pts.count {
+                let dij = d2(i, j)
+                var keep = true
+                for k in pts.indices where k != i && k != j {
+                    if Swift.max(d2(i, k), d2(j, k)) < dij { keep = false; break }
                 }
+                if keep { edges.append((i, j)) }
             }
-            if best.1 >= 0 { inTree[best.1] = true; edges.append(best) }
         }
         return edges
     }

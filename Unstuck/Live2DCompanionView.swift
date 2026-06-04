@@ -9,8 +9,17 @@ import WebKit
 /// To go live: bundle `Live2D/companion.html` (loading the Cubism Web SDK +
 /// pixi-live2d-display + your model). This view auto-loads it when present.
 struct Live2DCompanion: View {
+    private let mood = MoodDetector.shared
+    private var tintHex: String {
+        switch mood.mode {
+        case .ready:      return "4CD999"
+        case .hyperfocus: return "7280FF"
+        case .lowBattery: return "FF9966"
+        case .overwhelm:  return "99A8C7"
+        }
+    }
     var body: some View {
-        Live2DWebView()
+        Live2DWebView(tintHex: tintHex)       // glow recolours to the brain mode
             .frame(width: 112, height: 150)
             .accessibilityLabel(Text("Your companion"))
             .accessibilityHint(Text("Live2D character slot."))
@@ -18,6 +27,7 @@ struct Live2DCompanion: View {
 }
 
 private struct Live2DWebView: UIViewRepresentable {
+    let tintHex: String
     func makeUIView(context: Context) -> WKWebView {
         let web = WKWebView(frame: .zero, configuration: WKWebViewConfiguration())
         web.isOpaque = false
@@ -34,7 +44,9 @@ private struct Live2DWebView: UIViewRepresentable {
         return web
     }
 
-    func updateUIView(_ web: WKWebView, context: Context) {}
+    func updateUIView(_ web: WKWebView, context: Context) {
+        web.evaluateJavaScript("window.setTint && window.setTint('#\(tintHex)')", completionHandler: nil)
+    }
 
     /// A basic Live2D-STYLE character built in SVG/CSS — breathes, blinks, sways. Not a
     /// real rigged `.moc3` (that needs the Cubism editor + an artist), but it gives the
@@ -93,6 +105,9 @@ private struct Live2DWebView: UIViewRepresentable {
        <path d='M92 162 q16 16 40 4' stroke='#0c1430' stroke-width='4' fill='none' stroke-linecap='round'/>
      </g>
     </svg>
+    <script>
+      window.setTint=function(h){document.querySelectorAll('#aura stop').forEach(function(s){s.setAttribute('stop-color',h)});document.querySelectorAll('.twk').forEach(function(t){t.setAttribute('fill',h)})};
+    </script>
     </body></html>
     """
 }
