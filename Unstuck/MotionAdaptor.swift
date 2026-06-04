@@ -35,6 +35,11 @@ final class MotionAdaptor {
 
     func start() {
         guard motion.isAccelerometerAvailable else { return }
+        // Idempotent: tear down any prior run first, so a repeated start() never stacks a
+        // second 4 Hz timer / motion handler — the classic "laggy over time" leak.
+        lerpTimer?.invalidate()
+        motion.stopAccelerometerUpdates()
+        motion.stopDeviceMotionUpdates()
 
         // Handlers fire on the main queue, so we're already main-isolated —
         // assumeIsolated avoids spawning a Task per sample (was ~110 allocs/sec).

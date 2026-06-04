@@ -31,9 +31,18 @@ final class CalendarService {
         }
     }
 
+    // EventKit fires .EKEventStoreChanged in rapid bursts (a single edit — or a background
+    // account sync — can fire it many times). Debounce so a burst triggers exactly ONE
+    // cross-view refetch ~1.2 s after it settles, instead of a fetch storm.
+    private var refreshWork: DispatchWorkItem?
     private func externalChange() {
         cached = nil
-        NotificationCenter.default.post(name: .calendarDataChanged, object: nil)
+        refreshWork?.cancel()
+        let work = DispatchWorkItem {
+            NotificationCenter.default.post(name: .calendarDataChanged, object: nil)
+        }
+        refreshWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2, execute: work)
     }
 
     private(set) var clashes: [ClashSuggestion] = []

@@ -28,6 +28,7 @@ final class MoodDetector {
     // MARK: - Lifecycle
 
     func start() {
+        evalTimer?.invalidate()   // idempotent: never stack a second 30 s eval timer
         sessionStart = Date()
         baseline = UserBaseline.load()
         hourRecorded = false
