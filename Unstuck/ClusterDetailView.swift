@@ -194,7 +194,7 @@ struct ClusterDetailView: View {
         addNode()   // keep it on the map too (this clears captureText)
         Task {
             let ok = await CalendarService.shared.createReminder(title: trimmed)
-            HapticEngine.shared.reward(ok ? .success : .warning)
+            HapticEngine.shared.reward(ok ? .success : .soft)   // RSD: no failure buzz — it's still on the map
         }
     }
 
@@ -225,7 +225,7 @@ struct ClusterDetailView: View {
         captureText = ""; estimateMinutes = nil
         Task {
             let ok = await CalendarService.shared.createEvent(title: t, start: eventDate)
-            HapticEngine.shared.reward(ok ? .success : .warning)
+            HapticEngine.shared.reward(ok ? .success : .soft)   // RSD: no failure buzz — it's still on the map
             healthNodes = await CalendarService.shared.fetchUpcoming(forceRefresh: true)
         }
     }
@@ -273,8 +273,16 @@ struct ClusterDetailView: View {
                     .foregroundStyle(.white.opacity(0.6)).frame(width: 26, height: 26).panel(Circle())
             }
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Calendar look-ahead, \(AppSettings.shared.calendarDays) days")
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Calendar look-ahead")
+        .accessibilityValue("\(AppSettings.shared.calendarDays) days")
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment: adjustHorizon(1)
+            case .decrement: adjustHorizon(-1)
+            @unknown default: break
+            }
+        }
     }
 
     private func adjustHorizon(_ delta: Int) {
@@ -570,6 +578,9 @@ private struct HealthNode: View {
         .contentShape(Rectangle())
         // Reminder nodes are tappable to mark done; health nodes (steps/sleep) are read-only.
         .onTapGesture { if snapshot.reminderID != nil { onComplete() } }
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(snapshot.reminderID != nil ? .isButton : [])
+        .accessibilityHint(snapshot.reminderID != nil ? "Double-tap to mark done" : "")
         .onAppear {
             withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
                 pulse = true
