@@ -314,11 +314,17 @@ struct BrainMapView: View {
             }
             syncWidget()        // keep the Home-Screen cluster widget current
         }
-        // Focus music re-tunes itself live as the brain mode shifts
+        // Focus music re-tunes itself live as the brain mode shifts; the Dynamic Island
+        // focus pill recolors to match (a no-op when no session is running).
         .onChange(of: mood.mode) { _, newMode in
             if settings.focusMusic {
                 SpatialAudioService.shared.setMood(newMode)
             }
+            FocusSessionController.shared.refreshVisuals()
+        }
+        // Keep the focus pill's music note in sync if the toggle flips mid-session.
+        .onChange(of: settings.focusMusic) { _, _ in
+            FocusSessionController.shared.refreshVisuals()
         }
         .onReceive(NotificationCenter.default.publisher(for: .actionButtonCapture)) { _ in
             showingVoiceCapture = true
