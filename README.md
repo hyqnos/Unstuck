@@ -37,8 +37,8 @@ Your thoughts don't live in a list — they live in a *space*. Unstuck mirrors t
 **The brain map** is the home screen: a spatial canvas of clusters on a starfield.
 - **Organized zones** (solid borders): reminders, health, time, routines — the boring,
   dopamine-draining stuff, handled.
-- **Messy zones** (dashed borders): ideas, captures, someday — patterned chaos, like an
-  AuDHD room.
+- **Messy zones** (dashed borders): ideas, captures, someday — patterned chaos, like a
+  room that looks like a mess but isn't.
 - **YOU** sits at the center. Urgent things drift inward; cooling things drift out. The map
   breathes with priority.
 

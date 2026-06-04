@@ -34,6 +34,6 @@ If this policy ever changes, the updated version will be posted here with a new 
 
 ## Contact
 
-Questions about this policy: **[add your contact email here before publishing]**
+Questions about this policy: **[deniztimbiloglu@gmail.com](mailto:deniztimbiloglu@gmail.com)**
 
 — Unstuck
