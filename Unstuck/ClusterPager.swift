@@ -64,7 +64,7 @@ struct ClusterPager: View {
                     Circle().fill(col.opacity(0.85)).frame(width: 5, height: 5)
                 }
                 if active.isEmpty {
-                    Text("empty").font(.system(size: 10, design: .monospaced))
+                    Text("clear").font(.system(size: 10, design: .monospaced))
                         .foregroundStyle(.white.opacity(0.25))
                 }
             }

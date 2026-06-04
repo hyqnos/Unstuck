@@ -121,10 +121,10 @@ struct ClusterWidgetView: View {
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: 9) {
             Circle().fill(hexColor("4CD9BF")).frame(width: 7, height: 7)
-            Text("your map is waiting")
+            Text("your map lives here")
                 .font(.system(size: 13, weight: .light, design: .monospaced)).foregroundStyle(.white.opacity(0.85))
             Spacer(minLength: 0)
-            Text("open unstuck once to fill this")
+            Text("clusters appear here as you add them")
                 .font(.system(size: 9, design: .monospaced)).foregroundStyle(.white.opacity(0.3))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
