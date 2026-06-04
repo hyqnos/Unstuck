@@ -13,6 +13,9 @@ struct ClusterDetailView: View {
     @State private var lastMovedTitle: String? = nil   // for pull-to-undo after a move
     @State private var punchAt: Date? = nil            // claim screen-punch trigger
     @State private var reelWhy: String? = nil          // big-tier reveal for hard tasks
+    @State private var showEventPicker = false         // capture → real calendar event
+    @State private var eventDate = Date()
+    @State private var pendingEventText = ""
     @FocusState private var focused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -74,6 +77,12 @@ struct ClusterDetailView: View {
                         .transition(.opacity.combined(with: .move(edge: .bottom)))
                 }
 
+                // How far ahead the time space looks (time cluster only)
+                if cluster.zoneType == .timeManagement {
+                    horizonControl
+                        .padding(.bottom, 6)
+                }
+
                 // 🔦 Pick a highlight colour for this cluster (laser palette)
                 HighlightRow(cluster: cluster)
                     .padding(.horizontal, 24)
@@ -126,6 +135,12 @@ struct ClusterDetailView: View {
                                         .foregroundStyle(Color(red: 0.3, green: 0.85, blue: 0.75).opacity(0.85))
                                 }
                                 .accessibilityLabel("Also send to Reminders")
+                                Button(action: openEventPicker) {
+                                    Image(systemName: "calendar.badge.plus")
+                                        .font(.system(size: 20))
+                                        .foregroundStyle(Color(red: 0.3, green: 0.85, blue: 0.75).opacity(0.85))
+                                }
+                                .accessibilityLabel("Add to calendar")
                             }
                         }
                     }
@@ -140,6 +155,7 @@ struct ClusterDetailView: View {
         .onTapGesture { focused = false }
         .overlay { if let t = punchAt { ClaimPunch(start: t).allowsHitTesting(false) } }
         .overlay { if let why = reelWhy { RewardReel(whyLine: why) { withAnimation { reelWhy = nil } } } }
+        .sheet(isPresented: $showEventPicker) { eventPickerSheet }
         .task {
             switch cluster.zoneType {
             case .health:
@@ -188,6 +204,87 @@ struct ClusterDetailView: View {
         Task {
             _ = await CalendarService.shared.completeReminder(id: id)
             healthNodes = await CalendarService.shared.fetchUpcoming(forceRefresh: true)
+        }
+    }
+
+    private func openEventPicker() {
+        let t = captureText.trimmingCharacters(in: .whitespaces)
+        guard !t.isEmpty else { return }
+        pendingEventText = t
+        eventDate = Date().addingTimeInterval(3600)   // default: an hour from now
+        showEventPicker = true
+    }
+
+    /// Create a real calendar event at the chosen time, and keep it on the map too.
+    private func addEvent() {
+        let t = pendingEventText
+        showEventPicker = false
+        guard !t.isEmpty else { return }
+        let item = BrainItem(text: t, cluster: cluster, estimatedMinutes: estimateMinutes)
+        modelContext.insert(item)
+        captureText = ""; estimateMinutes = nil
+        Task {
+            let ok = await CalendarService.shared.createEvent(title: t, start: eventDate)
+            HapticEngine.shared.reward(ok ? .success : .warning)
+            healthNodes = await CalendarService.shared.fetchUpcoming(forceRefresh: true)
+        }
+    }
+
+    private var eventPickerSheet: some View {
+        VStack(spacing: 18) {
+            Text(pendingEventText)
+                .font(.system(.headline, design: .monospaced))
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+            DatePicker("", selection: $eventDate)
+                .datePickerStyle(.graphical)
+                .labelsHidden()
+                .tint(Color(red: 0.3, green: 0.85, blue: 0.75))
+            Button(action: addEvent) {
+                Text("add to calendar")
+                    .font(.system(.callout, design: .monospaced))
+                    .foregroundStyle(.black)
+                    .frame(maxWidth: .infinity).padding(.vertical, 12)
+                    .background(Color(red: 0.3, green: 0.85, blue: 0.75), in: Capsule())
+            }
+            Button("not now") { showEventPicker = false }
+                .font(.system(.footnote, design: .monospaced))
+                .foregroundStyle(.white.opacity(0.4))
+        }
+        .padding(24)
+        .presentationDetents([.medium, .large])
+        .presentationBackground(Color(red: 0.04, green: 0.04, blue: 0.10))
+    }
+
+    // Adjustable look-ahead for the time space (1–14 days).
+    private var horizonControl: some View {
+        HStack(spacing: 12) {
+            Button { adjustHorizon(-1) } label: {
+                Image(systemName: "minus").font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.6)).frame(width: 26, height: 26).panel(Circle())
+            }
+            Text("next \(AppSettings.shared.calendarDays) day\(AppSettings.shared.calendarDays == 1 ? "" : "s")")
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundStyle(.white.opacity(0.7))
+                .frame(minWidth: 92)
+            Button { adjustHorizon(1) } label: {
+                Image(systemName: "plus").font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.6)).frame(width: 26, height: 26).panel(Circle())
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Calendar look-ahead, \(AppSettings.shared.calendarDays) days")
+    }
+
+    private func adjustHorizon(_ delta: Int) {
+        let n = max(1, min(14, AppSettings.shared.calendarDays + delta))
+        guard n != AppSettings.shared.calendarDays else { return }
+        AppSettings.shared.calendarDays = n
+        HapticEngine.shared.tap()
+        Task {
+            healthNodes = await CalendarService.shared.fetchUpcoming(forceRefresh: true)
+            clashes = CalendarService.shared.clashes
         }
     }
 
