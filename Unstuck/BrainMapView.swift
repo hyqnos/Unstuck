@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import WidgetKit
 
 struct BrainMapView: View {
     @Environment(\.modelContext) var modelContext
@@ -280,6 +281,7 @@ struct BrainMapView: View {
             // reads nicer: the calm map appears instantly, then the energy blooms in.
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 patterns.analyse(clusters: clusters)
+                syncWidget()        // seed the Home-Screen cluster widget
 
                 // Spatial audio only when NOT in breadcrumb mode (keep return calm + quiet).
                 if !showingBreadcrumbs {
@@ -299,6 +301,7 @@ struct BrainMapView: View {
         }
         // Insane mode — every completion pops a quick laser burst
         .onReceive(NotificationCenter.default.publisher(for: .taskCompleted)) { _ in
+            syncWidget()        // a completed item changes a cluster's count
             guard settings.insaneMode else { return }
             celebrateStart = Date()
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) { celebrateStart = nil }
@@ -309,6 +312,7 @@ struct BrainMapView: View {
             if phase == .background {
                 AppIconManager.update(for: mood.mode)
             }
+            syncWidget()        // keep the Home-Screen cluster widget current
         }
         // Focus music re-tunes itself live as the brain mode shifts
         .onChange(of: mood.mode) { _, newMode in
@@ -331,6 +335,22 @@ struct BrainMapView: View {
         .overlay(alignment: .topLeading) { moodBadgeCorner }
         .overlay(alignment: .top) { clusterPagerCorner }
         .overlay(alignment: .bottomTrailing) { companionCorner }
+    }
+
+    /// Push a tiny cluster summary to the App Group so the Home-Screen cluster widget
+    /// can show + flip through them. Nothing new leaves the device — just the names +
+    /// active counts the user already sees on their map.
+    private func syncWidget() {
+        let ordered = clusters.sorted { $0.createdAt < $1.createdAt }
+        let summaries = ordered.map { c -> ClusterSummary in
+            let hex: String
+            if let h = c.highlightHex { hex = h.hasPrefix("#") ? String(h.dropFirst()) : h }
+            else { hex = c.zoneType.isOrganized ? "4CD9BF" : "99A8C7" }
+            return ClusterSummary(id: c.id.uuidString, label: c.label,
+                                  count: c.items.filter { $0.state != .done }.count, tintHex: hex)
+        }
+        SharedClusterStore.write(summaries)
+        WidgetCenter.shared.reloadTimelines(ofKind: "UnstuckClusterWidget")
     }
 
 

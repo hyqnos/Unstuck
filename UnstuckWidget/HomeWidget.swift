@@ -83,6 +83,7 @@ struct HomeWidget: Widget {
 struct UnstuckWidgetBundle: WidgetBundle {
     var body: some Widget {
         HomeWidget()
+        ClusterWidget()   // interactive Home-Screen cluster switcher (from ClusterWidget.swift)
         UnstuckWidget()   // Live Activity / Dynamic Island (from UnstuckWidget.swift)
     }
 }
