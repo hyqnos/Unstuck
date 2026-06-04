@@ -149,6 +149,14 @@ struct ClusterView: View {
             default: break
             }
         }
+        // Live sync: external calendar/reminder edits refresh the on-map card too.
+        .onReceive(NotificationCenter.default.publisher(for: .calendarDataChanged)) { _ in
+            guard AppSettings.shared.hasOnboarded, cluster.zoneType == .timeManagement else { return }
+            Task {
+                healthNodes = await CalendarService.shared.fetchUpcoming(forceRefresh: true)
+                withAnimation(.easeInOut(duration: 0.4)) { clashCount = CalendarService.shared.clashes.count }
+            }
+        }
         // One gesture: quick TAP opens instantly (with a dip+pop), DRAG past a
         // threshold moves the cluster. No forced hold — opening is the common act.
         .gesture(

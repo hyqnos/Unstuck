@@ -20,7 +20,21 @@ final class CalendarService {
     static let shared = CalendarService()
     private let store = EKEventStore()
     private var cached: [HealthSnapshot]?
-    private init() { moved = Self.loadDict(Self.movedKey); applied = Self.loadDict(Self.appliedKey) }
+    private init() {
+        moved = Self.loadDict(Self.movedKey); applied = Self.loadDict(Self.appliedKey)
+        // Live sync: when the user edits a calendar or reminder ANYWHERE else (Google,
+        // Apple, Outlook, Reminders), EventKit posts this — drop the cache and tell the
+        // map to refresh, so external changes appear without reopening the app.
+        NotificationCenter.default.addObserver(
+            forName: .EKEventStoreChanged, object: store, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.externalChange() }
+        }
+    }
+
+    private func externalChange() {
+        cached = nil
+        NotificationCenter.default.post(name: .calendarDataChanged, object: nil)
+    }
 
     private(set) var clashes: [ClashSuggestion] = []
     private var lastEvents: [Ev] = []
@@ -251,7 +265,7 @@ final class CalendarService {
         let now = Date()
         guard granted else { return mockEvents(now) }
 
-        let end = Calendar.current.date(byAdding: .day, value: 2, to: now) ?? now
+        let end = Calendar.current.date(byAdding: .day, value: AppSettings.shared.calendarDays, to: now) ?? now
         let span = max(1, end.timeIntervalSince(now))
         let eventStore = self.store
         
@@ -328,4 +342,10 @@ final class CalendarService {
     }
     private func short(_ s: String) -> String { s.count <= 14 ? s : String(s.prefix(13)) + "…" }
     private func clamp(_ x: Double) -> Double { Swift.min(1, Swift.max(0, x)) }
+}
+
+extension Notification.Name {
+    /// Posted when EventKit reports an external change (an edit in Google / Apple /
+    /// Outlook / Reminders) so the map can live-refresh.
+    static let calendarDataChanged = Notification.Name("unstuck.calendarDataChanged")
 }

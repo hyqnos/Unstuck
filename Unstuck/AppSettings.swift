@@ -60,6 +60,12 @@ final class AppSettings {
         didSet { UserDefaults.standard.set(companionCharacter.rawValue, forKey: Self.charKey) }
     }
 
+    /// How many days ahead the time space looks (events + reminders). Adjustable;
+    /// longer = more planning runway, still bounded so the fetch stays fast.
+    var calendarDays: Int {
+        didSet { UserDefaults.standard.set(calendarDays, forKey: Self.calDaysKey) }
+    }
+
     // Convenience gates used throughout the app
     var calmMode: Bool   { sensory == .calm }
     var insaneMode: Bool { sensory == .insane }
@@ -70,6 +76,7 @@ final class AppSettings {
     private static let companionKey = "unstuck.companionOn"
     private static let adaptiveKey = "unstuck.adaptiveMood"
     private static let charKey = "unstuck.companionCharacter"
+    private static let calDaysKey = "unstuck.calendarDays"
 
     private init() {
         let raw = UserDefaults.standard.string(forKey: Self.key)
@@ -80,6 +87,7 @@ final class AppSettings {
         companionOn = UserDefaults.standard.object(forKey: Self.companionKey) as? Bool ?? true
         adaptiveMood = UserDefaults.standard.object(forKey: Self.adaptiveKey) as? Bool ?? true
         companionCharacter = CompanionCharacter(rawValue: UserDefaults.standard.string(forKey: Self.charKey) ?? "") ?? .lion
+        calendarDays = max(1, UserDefaults.standard.object(forKey: Self.calDaysKey) as? Int ?? 7)
     }
 
     /// Cycle calm → normal → insane → calm

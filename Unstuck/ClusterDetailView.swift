@@ -140,6 +140,14 @@ struct ClusterDetailView: View {
             default: break
             }
         }
+        // Live sync: an edit made in Google/Apple/Reminders refreshes the open cluster.
+        .onReceive(NotificationCenter.default.publisher(for: .calendarDataChanged)) { _ in
+            guard cluster.zoneType == .timeManagement else { return }
+            Task {
+                healthNodes = await CalendarService.shared.fetchUpcoming(forceRefresh: true)
+                withAnimation(.easeInOut(duration: 0.3)) { clashes = CalendarService.shared.clashes }
+            }
+        }
     }
 
     private func addNode() {
