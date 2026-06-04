@@ -79,7 +79,7 @@ Three risks shape every screen. They aren't features — they're the floor.
 | **Voice capture** | Action Button → live speech-to-text → drop | `CaptureIntent`, `VoiceCapture`, `VoiceCaptureOverlay` |
 | **Mood-adaptive UI** | Detects brain mode (overwhelm / low-battery / ready / hyperfocus) from *behaviour*, learns your personal baseline, and transforms the whole UI | `MoodDetector`, `UserBaseline`, `MoodTheme` |
 | **Mood surfacing** | Three silent layers: an aurora sky-glow, an in-app badge, and mood-tinted alternate app icons. **Never names the state.** | `AuroraView`, `MoodBadge`, `AppIconManager` |
-| **Time space** | Aggregates Apple / Google / Outlook calendars + Reminders, detects overlaps, and auto-reschedules into your next free slot — favoring your good-energy hours | `CalendarService`, `ClashPreference` |
+| **Time space** | Aggregates Apple / Google / Outlook calendars + Reminders, detects overlaps, and auto-reschedules into your next free slot (favoring your good-energy hours). **Live-syncs** external edits, an **adjustable look-ahead**, and two-way **write-back**: send a thought to your real Reminders or Calendar, or tap a reminder to mark it done | `CalendarService`, `ClashPreference` |
 | **Health** | Steps / sleep / heart-rate / energy as live nodes | `HealthService` |
 | **Dopamine + collection** | Variety-rotating haptics, gyro-aware fling, milestone reveals, a progress ring around YOU | `HapticEngine`, `Progression`, `LaserShowView` |
 | **Knowledge crumbs** | Tiny brain-science + personal-pattern drops, scattered on the map, found not pushed | `KnowledgeCrumb`, `PatternService`, `CrumbView` |
