@@ -30,8 +30,8 @@ final class HapticEngine {
         ensureEngine()
         if let engine {
             let ev = CHHapticEvent(eventType: .hapticTransient, parameters: [
-                CHHapticEventParameter(parameterID: .hapticIntensity, value: Float(0.25 + 0.75 * p)),
-                CHHapticEventParameter(parameterID: .hapticSharpness, value: Float(0.20 + 0.80 * p)),
+                CHHapticEventParameter(parameterID: .hapticIntensity, value: Float(min(1, 0.55 + 0.45 * p))),
+                CHHapticEventParameter(parameterID: .hapticSharpness, value: Float(0.40 + 0.60 * p)),
             ], relativeTime: 0)
             if let pattern = try? CHHapticPattern(events: [ev], parameters: []),
                let player = try? engine.makePlayer(with: pattern) {
@@ -39,10 +39,10 @@ final class HapticEngine {
                 return
             }
         }
-        // Fallback: stepped UIKit impact
+        // Fallback: stepped UIKit impact (heavier styles, near-full intensity)
         let style: UIImpactFeedbackGenerator.FeedbackStyle =
-            p < 0.4 ? .soft : (p < 0.7 ? .light : (p < 0.95 ? .medium : .rigid))
-        UIImpactFeedbackGenerator(style: style).impactOccurred(intensity: CGFloat(0.4 + 0.6 * p))
+            p < 0.45 ? .light : (p < 0.8 ? .medium : .rigid)
+        UIImpactFeedbackGenerator(style: style).impactOccurred(intensity: CGFloat(min(1, 0.65 + 0.45 * p)))
     }
 
     /// The payoff at claim — a rapid escalating burst, ending in a satisfying boom.
@@ -51,29 +51,30 @@ final class HapticEngine {
         ensureEngine()
         if let engine {
             var events: [CHHapticEvent] = []
-            let n = big ? 6 : 4
+            let n = big ? 8 : 5
             for i in 0..<n {
                 let f = Double(i) / Double(max(1, n - 1))
                 events.append(CHHapticEvent(eventType: .hapticTransient, parameters: [
-                    CHHapticEventParameter(parameterID: .hapticIntensity, value: Float(0.5 + 0.5 * f)),
-                    CHHapticEventParameter(parameterID: .hapticSharpness, value: Float(0.3 + 0.7 * f)),
-                ], relativeTime: Double(i) * 0.05))
+                    CHHapticEventParameter(parameterID: .hapticIntensity, value: Float(min(1, 0.7 + 0.3 * f))),
+                    CHHapticEventParameter(parameterID: .hapticSharpness, value: Float(0.45 + 0.55 * f)),
+                ], relativeTime: Double(i) * 0.045))
             }
-            if big {   // a final low rumble — the "boom"
-                events.append(CHHapticEvent(eventType: .hapticContinuous, parameters: [
-                    CHHapticEventParameter(parameterID: .hapticIntensity, value: 1.0),
-                    CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.4),
-                ], relativeTime: Double(n) * 0.05, duration: 0.28))
-            }
+            // a final low rumble — the "boom" (always now, longer + stronger for big tiers)
+            events.append(CHHapticEvent(eventType: .hapticContinuous, parameters: [
+                CHHapticEventParameter(parameterID: .hapticIntensity, value: 1.0),
+                CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.5),
+            ], relativeTime: Double(n) * 0.045, duration: big ? 0.36 : 0.20))
             if let pattern = try? CHHapticPattern(events: events, parameters: []),
                let player = try? engine.makePlayer(with: pattern) {
                 try? player.start(atTime: 0)
                 return
             }
         }
-        // Fallback: rigid hit → success
-        UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+        // Fallback: a strong double-rigid → success
+        let rigid = UIImpactFeedbackGenerator(style: .rigid)
+        rigid.impactOccurred(intensity: 1.0)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.06) { rigid.impactOccurred(intensity: 1.0) }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
             UINotificationFeedbackGenerator().notificationOccurred(.success)
         }
     }
