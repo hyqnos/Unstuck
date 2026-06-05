@@ -95,9 +95,9 @@ final class PatternService {
 
         var streak = 1
         var current = calendar.startOfDay(for: Date())
-        while days.contains(calendar.date(byAdding: .day, value: -1, to: current)!) {
+        while let prev = calendar.date(byAdding: .day, value: -1, to: current), days.contains(prev) {
             streak += 1
-            current = calendar.date(byAdding: .day, value: -1, to: current)!
+            current = prev
         }
 
         guard streak >= 2 else { return nil }
