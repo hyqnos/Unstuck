@@ -61,7 +61,9 @@ struct AchievementsView: View {
                         Text("milestones")
                             .font(.system(size: 11, weight: .semibold, design: .monospaced))
                             .foregroundStyle(.white.opacity(0.4))
-                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 48), spacing: 8)], spacing: 8) {
+                        // Most-square grid via the √n divisor shortcut (9 marks → a tidy 3×3).
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8),
+                                                 count: squareGridColumns(prog.milestones.count)), spacing: 8) {
                             ForEach(prog.milestones, id: \.self) { m in
                                 milestone(m)
                             }

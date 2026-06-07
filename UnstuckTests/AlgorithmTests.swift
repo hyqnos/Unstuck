@@ -117,4 +117,15 @@ struct AlgorithmTests {
         ])
         #expect(e.count == 4)
     }
+
+    // MARK: - squareGridColumns (the √n factor shortcut → most-square grid)
+
+    @Test func squareGridColumnsAreMostSquare() {
+        #expect(squareGridColumns(9) == 3)    // 3 × 3
+        #expect(squareGridColumns(12) == 4)   // divisor 3 ≤ √12, paired with 4
+        #expect(squareGridColumns(16) == 4)   // 4 × 4
+        #expect(squareGridColumns(7) == 7)    // prime → a single row (1 × 7)
+        #expect(squareGridColumns(2) == 2)
+        #expect(squareGridColumns(1) == 1)
+    }
 }
