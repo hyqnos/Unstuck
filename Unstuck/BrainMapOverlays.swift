@@ -267,6 +267,32 @@ extension BrainMapView {
         }
     }
 
+    // Brain-dump valve: the full-screen pad + the relief WHY that lands after the scatter.
+    @ViewBuilder var brainDumpOverlay: some View {
+        if showDump {
+            BrainDumpView(isPresented: $showDump) { text in
+                // Reset to a neutral view so the shotgun scatter lands cleanly on the clusters.
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) {
+                    panOffset = .zero; userScale = 1.0; mapRotation = .zero
+                }
+                Task { await capturer.dump(text: text, clusters: clusters, context: modelContext) }
+            }
+            .zIndex(50)
+        }
+        if let why = capturer.dumpWhy {
+            Text(why)
+                .font(.system(.callout, design: .monospaced, weight: .medium))
+                .foregroundStyle(.white.opacity(0.92))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 22).padding(.vertical, 14)
+                .panel(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .padding(.horizontal, 40)
+                .transition(.scale(scale: 0.85).combined(with: .opacity))
+                .allowsHitTesting(false)
+                .zIndex(40)
+        }
+    }
+
     @ViewBuilder var moodBadgeCorner: some View {
         if survivalItem == nil && !showingBreadcrumbs {
             MoodBadge(mode: mood.mode)

@@ -23,6 +23,7 @@ struct BrainMapView: View {
     @State var mapSize: CGSize = .zero         // cached for collision-avoidance
     @State var overviewMode = false            // four-finger constellation overview
     @State var showDeck = false                // expanding card-deck browse fidget
+    @State var showDump = false                // brain-dump valve (swipe up on the capture bar)
     @State var pagerIndex = 0                   // on-map cluster pager position
     @Environment(\.accessibilityReduceMotion) var reduceMotion
     @State var showIntro = false               // launch laser show
@@ -247,6 +248,16 @@ struct BrainMapView: View {
                         checkSecretWord(text)   // 🥚 magic words
                         Task { await capturer.capture(text: text, clusters: clusters, context: modelContext) }
                     }
+                    // Swipe up on the bar → the brain-dump valve (empty your head all at once).
+                    .simultaneousGesture(
+                        DragGesture(minimumDistance: 28)
+                            .onEnded { v in
+                                if v.translation.height < -45 && abs(v.translation.width) < 70 {
+                                    HapticEngine.shared.tap()
+                                    withAnimation(.easeOut(duration: 0.25)) { showDump = true }
+                                }
+                            }
+                    )
                 }
                 .opacity(theme.captureBarOpacity)
                 .animation(.easeInOut(duration: 2.0), value: theme.captureBarOpacity)
@@ -341,6 +352,8 @@ struct BrainMapView: View {
         .overlay(alignment: .topLeading) { moodBadgeCorner }
         .overlay(alignment: .top) { clusterPagerCorner }
         .overlay(alignment: .bottomTrailing) { companionCorner }
+        .overlay { ScatterLayer(shots: capturer.scatterShots, mapSize: mapSize) }
+        .overlay { brainDumpOverlay }
     }
 
     /// Push a tiny cluster summary to the App Group so the Home-Screen cluster widget

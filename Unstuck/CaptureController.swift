@@ -137,4 +137,66 @@ final class CaptureController {
             withAnimation { self?.pendingDrop = nil }
         }
     }
+
+    // MARK: - Brain-dump valve (stream everything, the funnel sorts it, then shotgun-scatter)
+
+    /// One flying item in the scatter — knows its destination cluster + that cluster's colour.
+    struct ScatterShot: Identifiable {
+        let id = UUID()
+        let targetX: CGFloat
+        let targetY: CGFloat
+        let tint: Color
+        let index: Int          // for the staggered "ratatat"
+    }
+    var scatterShots: [ScatterShot] = []
+    var dumpWhy: String? = nil   // the relief line, after they all land
+
+    /// Empty-your-head: split a stream into items, funnel each through the classifier, drop
+    /// them, then FIRE them onto the board in a staggered shotgun scatter with a haptic cascade.
+    func dump(text: String, clusters: [Cluster], context: ModelContext) async {
+        let lines = text.split(whereSeparator: \.isNewline)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        guard !lines.isEmpty, !clusters.isEmpty else { return }
+
+        // Funnel each item (on-device). Sequential — the classifier is an actor anyway.
+        var shots: [ScatterShot] = []
+        for (i, line) in lines.enumerated() {
+            let r = await classifier.classifyAndName(text: line)
+            let target = clusters.first(where: { $0.zoneType == r.zone })
+                ?? clusters.first(where: { $0.zoneType == .captures })
+                ?? clusters.first
+            guard let target else { continue }
+            context.insert(BrainItem(text: line, title: r.title, cluster: target))
+            progression.recordCapture()
+            shots.append(ScatterShot(targetX: target.positionX, targetY: target.positionY,
+                                     tint: Color(hex: target.effectiveHighlightHex), index: i))
+        }
+        guard !shots.isEmpty else { return }
+
+        // FIRE 🔫 — the boom, then the staggered scatter; a haptic + blip as each one lands.
+        HapticEngine.shared.reward(.rigid)
+        SpatialAudioService.shared.playBlip(.open, atX: 0.5, y: 0.5)
+        withAnimation(.easeOut(duration: 0.2)) { scatterShots = shots }
+
+        for s in shots {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25 + Double(s.index) * 0.04) {
+                HapticEngine.shared.land()
+                SpatialAudioService.shared.playBlip(.land, atX: s.targetX, y: s.targetY)
+            }
+        }
+
+        // After the last lands → relief + the WHY (the deepest hit); the companion celebrates.
+        try? await Task.sleep(for: .seconds(0.25 + Double(shots.count) * 0.04 + 0.7))
+        HapticEngine.shared.reward(.success)
+        NotificationCenter.default.post(name: .taskCompleted, object: nil)
+        let n = shots.count
+        withAnimation(.easeIn(duration: 0.4)) {
+            dumpWhy = "that's \(n) thing\(n == 1 ? "" : "s") out of your head. working memory just got lighter."
+        }
+        withAnimation(.easeOut(duration: 0.5)) { scatterShots = [] }
+
+        try? await Task.sleep(for: .seconds(3.2))
+        withAnimation(.easeOut(duration: 0.6)) { dumpWhy = nil }
+    }
 }
