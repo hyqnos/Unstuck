@@ -79,6 +79,57 @@ final class HapticEngine {
         }
     }
 
+    /// The "wall came down" — the biggest haptic in the app, for finishing a dreaded task
+    /// (paired with the web-break visual). A rising tension rumble → a sharp CRACK → a cascade
+    /// of shards → a final boom. ~1.3s of escalating release.
+    func breakthrough() {
+        ensureEngine()
+        if let engine {
+            var events: [CHHapticEvent] = []
+            // 1. Tension build — a rumble that ramps up over 0.5s (the wall straining).
+            events.append(CHHapticEvent(eventType: .hapticContinuous, parameters: [
+                CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.6),
+                CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.2),
+            ], relativeTime: 0, duration: 0.5))
+            let build = CHHapticParameterCurve(parameterID: .hapticIntensityControl, controlPoints: [
+                .init(relativeTime: 0,   value: 0.2),
+                .init(relativeTime: 0.5, value: 1.0),
+            ], relativeTime: 0)
+            // 2. THE CRACK — a max transient at 0.5s.
+            events.append(CHHapticEvent(eventType: .hapticTransient, parameters: [
+                CHHapticEventParameter(parameterID: .hapticIntensity, value: 1.0),
+                CHHapticEventParameter(parameterID: .hapticSharpness, value: 1.0),
+            ], relativeTime: 0.5))
+            // 3. Shards — a quick cascade flying outward.
+            for i in 0..<7 {
+                let f = Double(i) / 6
+                events.append(CHHapticEvent(eventType: .hapticTransient, parameters: [
+                    CHHapticEventParameter(parameterID: .hapticIntensity, value: Float(0.95 - 0.55 * f)),
+                    CHHapticEventParameter(parameterID: .hapticSharpness, value: Float(0.85 - 0.35 * f)),
+                ], relativeTime: 0.53 + Double(i) * 0.045))
+            }
+            // 4. Final boom — a low release.
+            events.append(CHHapticEvent(eventType: .hapticContinuous, parameters: [
+                CHHapticEventParameter(parameterID: .hapticIntensity, value: 1.0),
+                CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.45),
+            ], relativeTime: 0.86, duration: 0.45))
+            if let pattern = try? CHHapticPattern(events: events, parameterCurves: [build]),
+               let player = try? engine.makePlayer(with: pattern) {
+                try? player.start(atTime: 0)
+                return
+            }
+        }
+        // Fallback: a building rigid → CRACK → cascade → success.
+        let rigid = UIImpactFeedbackGenerator(style: .rigid); rigid.prepare()
+        let heavy = UIImpactFeedbackGenerator(style: .heavy); heavy.prepare()
+        rigid.impactOccurred(intensity: 0.4)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { rigid.impactOccurred(intensity: 0.7) }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.50) { heavy.impactOccurred(intensity: 1.0) }   // CRACK
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.62) { rigid.impactOccurred(intensity: 0.8) }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.72) { rigid.impactOccurred(intensity: 0.55) }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.90) { UINotificationFeedbackGenerator().notificationOccurred(.success) }
+    }
+
     enum Reward: CaseIterable {
         case soft, light, medium, rigid, success, warning, selectionTap
     }

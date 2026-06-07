@@ -13,6 +13,7 @@ struct ClusterDetailView: View {
     @State private var lastMovedTitle: String? = nil   // for pull-to-undo after a move
     @State private var punchAt: Date? = nil            // claim screen-punch trigger
     @State private var reelWhy: String? = nil          // big-tier reveal for hard tasks
+    @State private var webBreakAt: Date? = nil         // "wall came down" web-shatter trigger
     @State private var showEventPicker = false         // capture → real calendar event
     @State private var eventDate = Date()
     @State private var pendingEventText = ""
@@ -154,6 +155,7 @@ struct ClusterDetailView: View {
         }
         .onTapGesture { focused = false }
         .overlay { if let t = punchAt { ClaimPunch(start: t).allowsHitTesting(false) } }
+        .overlay { if let t = webBreakAt { WebBreakView(start: t).allowsHitTesting(false) } }
         .overlay { if let why = reelWhy { RewardReel(whyLine: why) { withAnimation { reelWhy = nil } } } }
         .sheet(isPresented: $showEventPicker) { eventPickerSheet }
         .task {
@@ -333,7 +335,11 @@ struct ClusterDetailView: View {
 
         guard !AppSettings.shared.calmMode && !reduceMotion else { return }
         if challenging {
-            reelWhy = Self.wallWhys.randomElement()   // the wall came down → big spinning reveal
+            // The wall came down: a web cracks + SHATTERS with the breakthrough haptic, then the WHY.
+            webBreakAt = Date()
+            HapticEngine.shared.breakthrough()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.85) { reelWhy = Self.wallWhys.randomElement() }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.7) { webBreakAt = nil }
         } else {
             punchAt = Date()                          // small "loop closed" pop
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { punchAt = nil }
@@ -537,6 +543,7 @@ private struct DetailNode: View {
         claimed = true
         rampTask?.cancel(); rampTask = nil
         if AppSettings.shared.calmMode { HapticEngine.shared.reward(.soft) }
+        else if (item.estimatedMinutes ?? 0) >= 30 { HapticEngine.shared.claimBurst(big: true) }   // big → leads into the breakthrough
         else { HapticEngine.shared.claimBurst() }
         withAnimation(.easeOut(duration: 0.3)) { holdProgress = 0 }
         onComplete()
