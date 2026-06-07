@@ -372,6 +372,17 @@ extension BrainMapView {
             .accessibilityLabel("Surprise me")
             .accessibilityHint("Picks one thing for you")
 
+            // Look what you did — earned credits + milestones (private, never compared)
+            Button { withAnimation(.easeOut(duration: 0.25)) { showAchievements = true } } label: {
+                Image(systemName: "trophy")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(Color(red: 1.0, green: 0.82, blue: 0.32).opacity(0.8))
+                    .frame(width: 40, height: 40)
+                    .panel(Circle())
+            }
+            .accessibilityLabel("Look what you did")
+            .accessibilityHint("Your earned credits and milestones")
+
             // Teach the app — only on good days
             if isGoodDay {
                 Button {

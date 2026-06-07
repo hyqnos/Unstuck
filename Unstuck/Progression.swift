@@ -21,6 +21,7 @@ final class Progression {
 
     // Completion milestones — the main "collection" ladder
     private let marks = [1, 3, 7, 15, 30, 60, 120, 250, 500]
+    var milestones: [Int] { marks }   // exposed for the "look what you did" view
 
     private let capturedKey  = "unstuck.captured"
     private let completedKey  = "unstuck.completed"

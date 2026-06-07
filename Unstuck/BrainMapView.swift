@@ -24,6 +24,7 @@ struct BrainMapView: View {
     @State var overviewMode = false            // four-finger constellation overview
     @State var showDeck = false                // expanding card-deck browse fidget
     @State var showDump = false                // brain-dump valve (swipe up on the capture bar)
+    @State var showAchievements = false        // "look what you did" — credits + milestones
     @State var pagerIndex = 0                   // on-map cluster pager position
     @Environment(\.accessibilityReduceMotion) var reduceMotion
     @State var showIntro = false               // launch laser show
@@ -354,6 +355,11 @@ struct BrainMapView: View {
         .overlay(alignment: .bottomTrailing) { companionCorner }
         .overlay { ScatterLayer(shots: capturer.scatterShots, mapSize: mapSize) }
         .overlay { brainDumpOverlay }
+        .overlay {
+            if showAchievements {
+                AchievementsView(isPresented: $showAchievements, clusters: clusters).zIndex(60)
+            }
+        }
     }
 
     /// Push a tiny cluster summary to the App Group so the Home-Screen cluster widget
