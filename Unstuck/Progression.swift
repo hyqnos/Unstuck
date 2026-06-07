@@ -14,6 +14,7 @@ final class Progression {
 
     private(set) var captured: Int
     private(set) var completed: Int
+    private(set) var credits: Int          // Top Dollar credits — EARNED, never rolled
 
     /// Set when a milestone is crossed — the map watches this and reveals it.
     var pendingMilestone: Milestone?
@@ -23,10 +24,12 @@ final class Progression {
 
     private let capturedKey  = "unstuck.captured"
     private let completedKey  = "unstuck.completed"
+    private let creditsKey   = "unstuck.credits"
 
     private init() {
         captured  = UserDefaults.standard.integer(forKey: capturedKey)
         completed = UserDefaults.standard.integer(forKey: completedKey)
+        credits   = UserDefaults.standard.integer(forKey: creditsKey)
     }
 
     // MARK: - Record real wins
@@ -46,6 +49,26 @@ final class Progression {
                                          tier: tier(for: completed),
                                          caption: caption(for: completed))
         }
+    }
+
+    /// Top Dollar payout — **earned, never rolled.** The amount is a deterministic function of the
+    /// real effort (the time estimate), so the same task always pays the same: the reels are
+    /// theatre, the number is honest. Wall tasks (≥30 min) hit the 777/$$$ jackpot row. No RNG,
+    /// no variable-ratio — the slot *feeling* with zero gambling underneath.
+    @discardableResult
+    func awardCredits(estimatedMinutes: Int?) -> (amount: Int, jackpot: Bool) {
+        let m = estimatedMinutes ?? 5
+        let amount: Int
+        let jackpot: Bool
+        switch m {
+        case ..<5:    amount = 10;  jackpot = false
+        case 5..<15:  amount = 20;  jackpot = false
+        case 15..<30: amount = 50;  jackpot = false
+        default:      amount = 200; jackpot = true     // the 777 / $$$ row
+        }
+        credits += amount
+        UserDefaults.standard.set(credits, forKey: creditsKey)
+        return (amount, jackpot)
     }
 
     // MARK: - The "almost-there" pull (progress to next mark)

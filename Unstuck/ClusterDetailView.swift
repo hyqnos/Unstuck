@@ -14,6 +14,7 @@ struct ClusterDetailView: View {
     @State private var punchAt: Date? = nil            // claim screen-punch trigger
     @State private var reelWhy: String? = nil          // big-tier reveal for hard tasks
     @State private var webBreakAt: Date? = nil         // "wall came down" web-shatter trigger
+    @State private var topDollar: (amount: Int, jackpot: Bool)? = nil   // earned Top Dollar credit payout
     @State private var showEventPicker = false         // capture → real calendar event
     @State private var eventDate = Date()
     @State private var pendingEventText = ""
@@ -157,6 +158,16 @@ struct ClusterDetailView: View {
         .overlay { if let t = punchAt { ClaimPunch(start: t).allowsHitTesting(false) } }
         .overlay { if let t = webBreakAt { WebBreakView(start: t).allowsHitTesting(false) } }
         .overlay { if let why = reelWhy { RewardReel(whyLine: why) { withAnimation { reelWhy = nil } } } }
+        .overlay(alignment: .bottom) {
+            if let td = topDollar {
+                TopDollarReveal(amount: td.amount, jackpot: td.jackpot, total: Progression.shared.credits) {
+                    topDollar = nil
+                }
+                .padding(.bottom, 90)
+                .allowsHitTesting(false)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
         .sheet(isPresented: $showEventPicker) { eventPickerSheet }
         .task {
             switch cluster.zoneType {
@@ -333,16 +344,22 @@ struct ClusterDetailView: View {
         Progression.shared.recordCompletion()
         NotificationCenter.default.post(name: .taskCompleted, object: nil)
 
+        // Top Dollar: an EARNED credit payout — deterministic from the real effort (see
+        // Progression.awardCredits). Credits accrue even in calm mode; only the reveal is gated.
+        let award = Progression.shared.awardCredits(estimatedMinutes: item.estimatedMinutes)
+
         guard !AppSettings.shared.calmMode && !reduceMotion else { return }
         if challenging {
-            // The wall came down: a web cracks + SHATTERS with the breakthrough haptic, then the WHY.
+            // The wall came down: web SHATTERS + breakthrough haptic → the 777/$$$ JACKPOT meter → the WHY.
             webBreakAt = Date()
             HapticEngine.shared.breakthrough()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.85) { reelWhy = Self.wallWhys.randomElement() }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.95) { topDollar = award }
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.7) { webBreakAt = nil }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.9) { reelWhy = Self.wallWhys.randomElement() }
         } else {
             punchAt = Date()                          // small "loop closed" pop
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { punchAt = nil }
+            topDollar = award                          // the BONUS WIN credit meter slides up
         }
     }
 
