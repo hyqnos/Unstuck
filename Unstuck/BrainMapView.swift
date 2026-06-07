@@ -349,9 +349,8 @@ struct BrainMapView: View {
     private func syncWidget() {
         let ordered = clusters.sorted { $0.createdAt < $1.createdAt }
         let summaries = ordered.map { c -> ClusterSummary in
-            let hex: String
-            if let h = c.highlightHex { hex = h.hasPrefix("#") ? String(h.dropFirst()) : h }
-            else { hex = c.zoneType.isOrganized ? "4CD9BF" : "99A8C7" }
+            let raw = c.effectiveHighlightHex
+            let hex = raw.hasPrefix("#") ? String(raw.dropFirst()) : raw
             return ClusterSummary(id: c.id.uuidString, label: c.label,
                                   count: c.items.filter { $0.state != .done }.count, tintHex: hex)
         }

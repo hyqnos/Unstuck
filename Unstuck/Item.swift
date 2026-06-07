@@ -21,6 +21,21 @@ enum ZoneType: String, Codable {
         case .ideas, .captures, .someday: return false
         }
     }
+
+    /// Default cluster colour, drawn from chromotherapy / chakra associations — but
+    /// **RSD-safe: no red.** (Root-chakra red, an alarm colour, becomes a grounding warm
+    /// gold instead.) Every cluster gets one; a user pick overrides it.
+    var defaultHighlightHex: String {
+        switch self {
+        case .health:         return "4CD9A0"   // heart green — healing, balance
+        case .reminders:      return "4FC3E8"   // throat blue — clarity, communication
+        case .timeManagement: return "6E7BF0"   // third-eye indigo — focus, order
+        case .routines:       return "F0B95C"   // solar-plexus gold — steady, grounding (not red)
+        case .ideas:          return "B07CF0"   // crown violet — inspiration, imagination
+        case .captures:       return "46D9C9"   // turquoise — open flow
+        case .someday:        return "C7A8F0"   // lavender — dream, the far future
+        }
+    }
 }
 
 // Detected from behavior — never asked directly
@@ -51,8 +66,12 @@ final class Cluster {
 
     var createdAt: Date
 
-    // 🔦 User-chosen highlight colour (hex "RRGGBB"); nil = no highlight.
+    // 🔦 User-chosen highlight colour (hex "RRGGBB"); nil = use the chromotherapy default.
     var highlightHex: String? = nil
+
+    /// The colour a cluster actually shows: the user's pick, or its chromotherapy default.
+    /// Computed (not persisted) — every cluster always has a colour.
+    var effectiveHighlightHex: String { highlightHex ?? zoneType.defaultHighlightHex }
 
     @Relationship(deleteRule: .cascade, inverse: \BrainItem.cluster)
     var items: [BrainItem]

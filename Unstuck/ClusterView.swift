@@ -84,13 +84,20 @@ struct ClusterView: View {
                             style: StrokeStyle(lineWidth: 1, dash: [5, 4]))
             }
         }
-        // 🔦 User-chosen highlight — a neon glow ring (laser palette)
+        // 🔦 Highlight ring — EVERY cluster shows its chromotherapy colour. The default is a
+        // tinted border only (no shadow → RAM/GPU-neutral); a user pick upgrades to the full
+        // neon glow. All colours avoid red (RSD-safe).
         .overlay {
-            if let hex = cluster.highlightHex {
+            let color = Color(hex: cluster.effectiveHighlightHex)
+            if cluster.highlightHex != nil {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Color(hex: hex), lineWidth: 1.5)
-                    .shadow(color: Color(hex: hex).opacity(0.85), radius: 7)
-                    .shadow(color: Color(hex: hex).opacity(0.5), radius: 15)
+                    .stroke(color, lineWidth: 1.5)
+                    .shadow(color: color.opacity(0.85), radius: 7)
+                    .shadow(color: color.opacity(0.5), radius: 15)
+                    .allowsHitTesting(false)
+            } else {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(color.opacity(highlighted ? 0.6 : 0.4), lineWidth: 1.2)
                     .allowsHitTesting(false)
             }
         }

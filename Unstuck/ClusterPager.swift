@@ -16,12 +16,7 @@ struct ClusterPager: View {
 
     @State private var dragX: CGFloat = 0
 
-    private func tint(_ c: Cluster) -> Color {
-        if let hex = c.highlightHex { return Color(hex: hex) }
-        return c.zoneType.isOrganized
-            ? Color(red: 0.30, green: 0.85, blue: 0.75)
-            : Color(red: 0.60, green: 0.66, blue: 0.78)
-    }
+    private func tint(_ c: Cluster) -> Color { Color(hex: c.effectiveHighlightHex) }
 
     var body: some View {
         if !clusters.isEmpty {
