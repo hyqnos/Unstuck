@@ -11,6 +11,8 @@ struct CompanionCorner: View {
     private let settings = AppSettings.shared
     @State private var mutter: String? = nil
     @State private var showPicker = false
+    @State private var bodyDoubleTaste = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -36,11 +38,21 @@ struct CompanionCorner: View {
             }
 
             companionBody
-                .contentShape(Rectangle())   // hit area over the transparent 3D view, so the long-press lands
+                // Tap = a taste of body-double mode: it steps forward, grows, and offers
+                // company, then settles back. Presence, never a demand (PDA-safe). The full
+                // "focus together" space is a later build — this is just the hint.
+                .scaleEffect(bodyDoubleTaste ? (reduceMotion ? 1.25 : 1.9) : 1.0, anchor: .bottomTrailing)
+                .offset(y: bodyDoubleTaste && !reduceMotion ? -36 : 0)
+                .shadow(color: Color(red: 0.3, green: 0.85, blue: 0.75).opacity(bodyDoubleTaste ? 0.45 : 0),
+                        radius: bodyDoubleTaste ? 22 : 0)
+                .animation(.spring(response: 0.5, dampingFraction: 0.72), value: bodyDoubleTaste)
+                .contentShape(Rectangle())   // hit area over the transparent 3D view
+                .onTapGesture { tasteBodyDouble() }
                 .onLongPressGesture(minimumDuration: 0.4) {
                     HapticEngine.shared.reward(.soft)
                     withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) { showPicker.toggle() }
                 }
+                .accessibilityHint("Tap for a moment of company; press and hold to change companion")
         }
         .task { await museLoop() }
         .onReceive(NotificationCenter.default.publisher(for: .taskCompleted)) { _ in
@@ -91,6 +103,19 @@ struct CompanionCorner: View {
         }
     }
 
+    /// A taste of body-double mode: the companion steps forward, grows, offers company,
+    /// then settles back on its own. Invitation, never a demand. The full focus space is later.
+    @MainActor private func tasteBodyDouble() {
+        guard !bodyDoubleTaste else { return }
+        HapticEngine.shared.reward(.soft)
+        bodyDoubleTaste = true   // animated by the .animation(value:) modifier above
+        say(Self.company.randomElement() ?? "want company?", for: 3)
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(2.8))
+            bodyDoubleTaste = false
+        }
+    }
+
     @MainActor private func say(_ text: String, for seconds: Double) {
         withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) { mutter = text }
         Task { @MainActor in
@@ -117,4 +142,6 @@ struct CompanionCorner: View {
     static let low       = ["rest counts too.", "slow is okay.", "easy does it."]
     static let overwhelm = ["one thing. or none.", "breathe — i'm here.", "you're fine.", "smaller is allowed."]
     static let wins      = ["oh nice.", "that's a win.", "saw that.", "nice one."]
+    // Body-double taste — invitations to co-presence, never commands (PDA-safe).
+    static let company   = ["want company?", "i'll sit with you.", "here with you.", "let's just be here."]
 }
