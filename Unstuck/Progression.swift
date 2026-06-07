@@ -15,6 +15,7 @@ final class Progression {
     private(set) var captured: Int
     private(set) var completed: Int
     private(set) var credits: Int          // Top Dollar credits — EARNED, never rolled
+    private(set) var completionTimes: [Double] = []   // timestamps, for personal records (you vs your past self)
 
     /// Set when a milestone is crossed — the map watches this and reveals it.
     var pendingMilestone: Milestone?
@@ -23,14 +24,38 @@ final class Progression {
     private let marks = [1, 3, 7, 15, 30, 60, 120, 250, 500]
     var milestones: [Int] { marks }   // exposed for the "look what you did" view
 
+    // MARK: - Personal records (you vs. your past self — never vs. anyone else; RSD-safe)
+    private var completionDates: [Date] { completionTimes.map { Date(timeIntervalSince1970: $0) } }
+    var bestDay: Int {
+        let cal = Calendar.current
+        return Dictionary(grouping: completionDates) { cal.startOfDay(for: $0) }.values.map(\.count).max() ?? 0
+    }
+    var bestWeek: Int {
+        let cal = Calendar.current
+        return Dictionary(grouping: completionDates) {
+            cal.date(from: cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: $0)) ?? $0
+        }.values.map(\.count).max() ?? 0
+    }
+    var activeDays: Int {
+        let cal = Calendar.current
+        return Set(completionDates.map { cal.startOfDay(for: $0) }).count
+    }
+    var thisWeekCount: Int {
+        let cal = Calendar.current
+        let w = cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date())
+        return completionDates.filter { cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: $0) == w }.count
+    }
+
     private let capturedKey  = "unstuck.captured"
     private let completedKey  = "unstuck.completed"
     private let creditsKey   = "unstuck.credits"
+    private let timesKey     = "unstuck.completionTimes"
 
     private init() {
         captured  = UserDefaults.standard.integer(forKey: capturedKey)
         completed = UserDefaults.standard.integer(forKey: completedKey)
         credits   = UserDefaults.standard.integer(forKey: creditsKey)
+        completionTimes = UserDefaults.standard.array(forKey: timesKey) as? [Double] ?? []
     }
 
     // MARK: - Record real wins
@@ -44,6 +69,10 @@ final class Progression {
         let before = completed
         completed += 1
         UserDefaults.standard.set(completed, forKey: completedKey)
+
+        completionTimes.append(Date().timeIntervalSince1970)
+        if completionTimes.count > 400 { completionTimes.removeFirst(completionTimes.count - 400) }  // bounded
+        UserDefaults.standard.set(completionTimes, forKey: timesKey)
 
         if marks.contains(completed), completed > before {
             pendingMilestone = Milestone(count: completed,

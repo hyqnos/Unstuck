@@ -7,6 +7,7 @@ import SwiftUI
 struct AchievementsView: View {
     @Binding var isPresented: Bool
     let clusters: [Cluster]
+    @State private var cardImage: Image? = nil   // opt-in share card, rendered on appear
 
     private let prog = Progression.shared
     private let gold = Color(red: 1.0, green: 0.82, blue: 0.32)
@@ -24,6 +25,13 @@ struct AchievementsView: View {
                             .font(.system(.title3, design: .monospaced, weight: .semibold))
                             .foregroundStyle(.white.opacity(0.92))
                         Spacer()
+                        if let img = cardImage {
+                            ShareLink(item: img, preview: SharePreview("my unstuck", image: img)) {
+                                Image(systemName: "square.and.arrow.up").font(.system(size: 14, weight: .semibold))
+                                    .foregroundStyle(.white.opacity(0.6)).frame(width: 34, height: 34).panel(Circle())
+                            }
+                            .accessibilityLabel("Share a win")
+                        }
                         Button { close() } label: {
                             Image(systemName: "xmark").font(.system(size: 14, weight: .semibold))
                                 .foregroundStyle(.white.opacity(0.5)).frame(width: 34, height: 34).panel(Circle())
@@ -60,6 +68,25 @@ struct AchievementsView: View {
                         }
                     }
 
+                    // Personal records — you vs. your past self. Only ever celebrates; never
+                    // shows you sitting below your best (that'd be the RSD trap).
+                    if prog.activeDays > 0 {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("your records")
+                                .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                                .foregroundStyle(.white.opacity(0.4))
+                            HStack(spacing: 12) {
+                                record("\(prog.bestDay)", "best day")
+                                record("\(prog.bestWeek)", "best week")
+                                record("\(prog.activeDays)", "active days")
+                            }
+                            if prog.bestWeek > 0, prog.thisWeekCount >= prog.bestWeek {
+                                Text("🎉 this week matches your best — \(prog.thisWeekCount)")
+                                    .font(.system(size: 11, design: .monospaced)).foregroundStyle(gold)
+                            }
+                        }
+                    }
+
                     // Where the wins landed — the spread, in each cluster's colour.
                     if doneCount > 0 {
                         VStack(alignment: .leading, spacing: 8) {
@@ -87,6 +114,7 @@ struct AchievementsView: View {
             }
         }
         .transition(.opacity)
+        .onAppear { renderCard() }
     }
 
     private func stat(_ value: String, _ label: String, _ color: Color) -> some View {
@@ -117,5 +145,47 @@ struct AchievementsView: View {
             }
     }
 
+    private func record(_ value: String, _ label: String) -> some View {
+        VStack(spacing: 3) {
+            Text(value).font(.system(size: 22, weight: .black, design: .rounded).monospacedDigit()).foregroundStyle(.white)
+            Text(label).font(.system(size: 9, design: .monospaced)).foregroundStyle(.white.opacity(0.45))
+        }
+        .frame(maxWidth: .infinity).padding(.vertical, 12)
+        .panel(RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+
+    @MainActor private func renderCard() {
+        let r = ImageRenderer(content: ShareCard(cleared: doneCount, credits: prog.credits))
+        r.scale = 3
+        if let ui = r.uiImage { cardImage = Image(uiImage: ui) }
+    }
+
     private func close() { withAnimation(.easeOut(duration: 0.25)) { isPresented = false } }
+}
+
+/// The opt-in share card — rendered to an image and sent via the system share sheet. No account,
+/// no server: you choose what/when/who. No-label, on-brand (sharable in public, so it stays clean).
+private struct ShareCard: View {
+    let cleared: Int
+    let credits: Int
+    var body: some View {
+        VStack(spacing: 8) {
+            Text("● unstuck")
+                .font(.system(size: 15, weight: .bold, design: .monospaced)).foregroundStyle(.white.opacity(0.55))
+            Spacer()
+            Text("\(cleared)")
+                .font(.system(size: 96, weight: .black, design: .rounded)).foregroundStyle(.white)
+            Text("things cleared")
+                .font(.system(size: 19, design: .monospaced)).foregroundStyle(Color(red: 0.3, green: 0.85, blue: 0.75))
+            Spacer()
+            Text("\(credits) credits · my own pace")
+                .font(.system(size: 12, design: .monospaced)).foregroundStyle(.white.opacity(0.4))
+        }
+        .padding(28)
+        .frame(width: 340, height: 340)
+        .background(
+            LinearGradient(colors: [Color(red: 0.07, green: 0.07, blue: 0.16), Color(red: 0.01, green: 0.01, blue: 0.05)],
+                           startPoint: .top, endPoint: .bottom)
+        )
+    }
 }
