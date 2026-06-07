@@ -90,9 +90,9 @@ struct StarfieldView: View {
                     .allowsHitTesting(false)
 
                 // All stars in ONE draw call per frame — Canvas is a single Metal layer.
-                // Capped at 30fps: twinkling needs no more, and every glass surface
-                // re-samples this backdrop, so halving its rate halves glass cost.
-                TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { tl in
+                // Capped at 24fps: twinkling needs no more, and every glass surface
+                // re-samples this backdrop, so trimming its rate trims glass cost too.
+                TimelineView(.animation(minimumInterval: 1.0 / 24.0)) { tl in
                     Canvas { ctx, size in
                         let t = tl.date.timeIntervalSinceReferenceDate
                         for star in stars {

@@ -9,8 +9,9 @@ struct AuroraView: View {
     let intensity: Double
 
     var body: some View {
-        // 20fps is plenty for a slow aurora drift — keeps it cheap
-        TimelineView(.animation(minimumInterval: 1.0 / 20.0)) { tl in
+        // 15fps is plenty for a slow aurora drift — the MeshGradient is the priciest
+        // always-on shader, so trimming its cadence is a free sustained-load win.
+        TimelineView(.animation(minimumInterval: 1.0 / 15.0)) { tl in
             let t = tl.date.timeIntervalSinceReferenceDate
             MeshGradient(
                 width: 3, height: 3,
