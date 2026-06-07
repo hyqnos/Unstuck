@@ -108,7 +108,7 @@ actor ClusterClassifier {
 
     // MARK: - Keyword fallback (Simulator / no Apple Intelligence)
 
-    private func classifyWithKeywords(text: String) -> ZoneType {
+    nonisolated func classifyWithKeywords(text: String) -> ZoneType {   // nonisolated (pure) + unit-tested
         let t = text.lowercased()
 
         let rules: [(ZoneType, [String])] = [

@@ -237,7 +237,7 @@ final class CalendarService {
 
     /// First gap ≥ duration at/after `after`, within waking hours, preferring the
     /// user's non-low-energy hours. Merge is O(n log n); the scan is O(n).
-    private func findSlot(duration: TimeInterval, after: Date, busy: [(Date, Date)]) -> Date? {
+    func findSlot(duration: TimeInterval, after: Date, busy: [(Date, Date)]) -> Date? {   // internal: unit-tested
         let merged = mergeBusy(busy)
         let baseline = UserBaseline.load()
         var cursor = after
@@ -267,7 +267,7 @@ final class CalendarService {
         return cursor
     }
 
-    private func mergeBusy(_ intervals: [(Date, Date)]) -> [(Date, Date)] {
+    func mergeBusy(_ intervals: [(Date, Date)]) -> [(Date, Date)] {   // internal: unit-tested
         guard !intervals.isEmpty else { return [] }
         let s = intervals.sorted { $0.0 < $1.0 }
         var merged = [s[0]]

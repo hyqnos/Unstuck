@@ -201,7 +201,7 @@ struct ClusterView: View {
 
 // MARK: - Node graph (mini constellation)
 
-private struct NodeGraph: View {
+struct NodeGraph: View {   // internal (was private) so rng is unit-testable
     let items: [BrainItem]
     var healthNodes: [HealthSnapshot] = []
     let size: CGSize
