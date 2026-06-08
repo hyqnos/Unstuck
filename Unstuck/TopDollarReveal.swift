@@ -10,6 +10,7 @@ struct TopDollarReveal: View {
     let amount: Int
     let jackpot: Bool
     let total: Int
+    var multiplier: Int = 1
     var onDone: () -> Void = {}
 
     @State private var start = Date()
@@ -36,9 +37,18 @@ struct TopDollarReveal: View {
 
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(jackpot ? "JACKPOT  $ 777 $" : "BONUS WIN")
-                        .font(.system(size: jackpot ? 13 : 11, weight: .heavy, design: .rounded))
-                        .foregroundStyle(accent)
+                    HStack(spacing: 6) {
+                        Text(jackpot ? "JACKPOT  $ 777 $" : "BONUS WIN")
+                            .font(.system(size: jackpot ? 13 : 11, weight: .heavy, design: .rounded))
+                            .foregroundStyle(accent)
+                        if multiplier > 1 {
+                            Text("×\(multiplier)")
+                                .font(.system(size: 12, weight: .black, design: .rounded))
+                                .foregroundStyle(.black)
+                                .padding(.horizontal, 6).padding(.vertical, 1)
+                                .background(Capsule().fill(accent))
+                        }
+                    }
                     Text("\(total) credits")
                         .font(.system(size: 10, design: .monospaced))
                         .foregroundStyle(.white.opacity(0.5))

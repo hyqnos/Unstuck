@@ -14,7 +14,7 @@ struct ClusterDetailView: View {
     @State private var punchAt: Date? = nil            // claim screen-punch trigger
     @State private var reelWhy: String? = nil          // big-tier reveal for hard tasks
     @State private var webBreakAt: Date? = nil         // "wall came down" web-shatter trigger
-    @State private var topDollar: (amount: Int, jackpot: Bool)? = nil   // earned Top Dollar credit payout
+    @State private var topDollar: (amount: Int, jackpot: Bool, multiplier: Int)? = nil   // earned Top Dollar payout
     @State private var showEventPicker = false         // capture → real calendar event
     @State private var eventDate = Date()
     @State private var pendingEventText = ""
@@ -160,7 +160,7 @@ struct ClusterDetailView: View {
         .overlay { if let why = reelWhy { RewardReel(whyLine: why) { withAnimation { reelWhy = nil } } } }
         .overlay(alignment: .bottom) {
             if let td = topDollar {
-                TopDollarReveal(amount: td.amount, jackpot: td.jackpot, total: Progression.shared.credits) {
+                TopDollarReveal(amount: td.amount, jackpot: td.jackpot, total: Progression.shared.credits, multiplier: td.multiplier) {
                     topDollar = nil
                 }
                 .padding(.bottom, 90)
@@ -334,7 +334,10 @@ struct ClusterDetailView: View {
     }
 
     private func complete(_ item: BrainItem) {
-        let challenging = (item.estimatedMinutes ?? 0) >= 30   // the big ones you flagged
+        // Earned signals — what makes this finish a real moment (never random):
+        let estimate = item.estimatedMinutes ?? 0
+        let wasAvoided = item.state == .fading                                   // you'd been dodging it
+        let clearedCluster = cluster.items.filter { $0.state != .done }.count == 1   // this is the last active one
         withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
             item.state = .done
         }
@@ -344,13 +347,14 @@ struct ClusterDetailView: View {
         Progression.shared.recordCompletion()
         NotificationCenter.default.post(name: .taskCompleted, object: nil)
 
-        // Top Dollar: an EARNED credit payout — deterministic from the real effort (see
-        // Progression.awardCredits). Credits accrue even in calm mode; only the reveal is gated.
-        let award = Progression.shared.awardCredits(estimatedMinutes: item.estimatedMinutes)
+        // Earned credit payout — bigger for harder / avoided / cluster-clearing wins, never a roll.
+        let award = Progression.shared.awardCredits(estimatedMinutes: estimate,
+                                                    clearedCluster: clearedCluster, wasAvoided: wasAvoided)
 
         guard !AppSettings.shared.calmMode && !reduceMotion else { return }
-        if challenging {
-            // The wall came down: web SHATTERS + breakthrough haptic → the 777/$$$ JACKPOT meter → the WHY.
+        if award.jackpot {
+            // A real jackpot moment (wall task, OR you emptied the whole cluster): web SHATTERS +
+            // breakthrough haptic → the 777/$$$ JACKPOT meter (×multiplier) → the WHY.
             webBreakAt = Date()
             HapticEngine.shared.breakthrough()
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.95) { topDollar = award }
@@ -359,7 +363,7 @@ struct ClusterDetailView: View {
         } else {
             punchAt = Date()                          // small "loop closed" pop
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { punchAt = nil }
-            topDollar = award                          // the BONUS WIN credit meter slides up
+            topDollar = award                          // the BONUS WIN credit meter (with any ×multiplier)
         }
     }
 

@@ -85,20 +85,28 @@ final class Progression {
     /// real effort (the time estimate), so the same task always pays the same: the reels are
     /// theatre, the number is honest. Wall tasks (≥30 min) hit the 777/$$$ jackpot row. No RNG,
     /// no variable-ratio — the slot *feeling* with zero gambling underneath.
+    /// Earned multipliers — tied to REAL significance, never a dice roll: clearing a whole
+    /// cluster, or finally doing a task you'd been avoiding, is genuinely worth more. So a
+    /// jackpot can hit on a *small* task too — when finishing it is a real moment.
     @discardableResult
-    func awardCredits(estimatedMinutes: Int?) -> (amount: Int, jackpot: Bool) {
+    func awardCredits(estimatedMinutes: Int?, clearedCluster: Bool = false, wasAvoided: Bool = false)
+        -> (amount: Int, jackpot: Bool, multiplier: Int) {
         let m = estimatedMinutes ?? 5
-        let amount: Int
-        let jackpot: Bool
+        var base: Int
+        var jackpot: Bool
         switch m {
-        case ..<5:    amount = 10;  jackpot = false
-        case 5..<15:  amount = 20;  jackpot = false
-        case 15..<30: amount = 50;  jackpot = false
-        default:      amount = 200; jackpot = true     // the 777 / $$$ row
+        case ..<5:    base = 10;  jackpot = false
+        case 5..<15:  base = 20;  jackpot = false
+        case 15..<30: base = 50;  jackpot = false
+        default:      base = 200; jackpot = true     // the 777 / $$$ row
         }
+        var multiplier = 1
+        if wasAvoided     { multiplier *= 2 }                  // you cleared something you'd been dodging
+        if clearedCluster { multiplier *= 2; jackpot = true }  // you emptied the whole cluster → a jackpot moment
+        let amount = base * multiplier
         credits += amount
         UserDefaults.standard.set(credits, forKey: creditsKey)
-        return (amount, jackpot)
+        return (amount, jackpot, multiplier)
     }
 
     // MARK: - The "almost-there" pull (progress to next mark)
