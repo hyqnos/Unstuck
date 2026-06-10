@@ -75,13 +75,13 @@ Three risks shape every screen. They aren't features — they're the floor.
 | System | What it does | Key files |
 |---|---|---|
 | **Brain map** | Spatial cluster canvas, draggable + persisted, collision-avoided, with a starfield + holographic tilt | `BrainMapView`, `ClusterView`, `StarfieldView`, `TiltLayer` |
-| **Capture funnel** | Sub-second capture → on-device AI names + classifies → focus-dive drop | `CaptureController`, `ClusterClassifier`, `QuickCaptureBar`, `DropBoxView` |
+| **Capture funnel** | Sub-second capture → on-device AI names + classifies → focus-dive drop. **Brain-dump valve:** swipe up, stream everything at once, and the funnel sorts the whole batch — then fires it onto the map in a staggered scatter with colour tracers | `CaptureController`, `ClusterClassifier`, `QuickCaptureBar`, `BrainDumpView`, `ScatterLayer` |
 | **Voice capture** | Action Button → live speech-to-text → drop | `CaptureIntent`, `VoiceCapture`, `VoiceCaptureOverlay` |
 | **Mood-adaptive UI** | Detects brain mode (overwhelm / low-battery / ready / hyperfocus) from *behaviour*, learns your personal baseline, and transforms the whole UI | `MoodDetector`, `UserBaseline`, `MoodTheme` |
 | **Mood surfacing** | Three silent layers: an aurora sky-glow, an in-app badge, and mood-tinted alternate app icons. **Never names the state.** | `AuroraView`, `MoodBadge`, `AppIconManager` |
 | **Time space** | Aggregates Apple / Google / Outlook calendars + Reminders, detects overlaps, and auto-reschedules into your next free slot (favoring your good-energy hours). **Live-syncs** external edits, an **adjustable look-ahead**, and two-way **write-back**: send a thought to your real Reminders or Calendar, or tap a reminder to mark it done | `CalendarService`, `ClashPreference` |
 | **Health** | Steps / sleep / heart-rate / energy as live nodes | `HealthService` |
-| **Dopamine + collection** | Variety-rotating haptics, gyro-aware fling, milestone reveals, a progress ring around YOU | `HapticEngine`, `Progression`, `LaserShowView` |
+| **Dopamine + collection** | Variety-rotating haptics, gyro-aware fling, milestone reveals, a progress ring around YOU. Completions pay **earned credits** through a slot-style reveal — reels that always land on what you actually did (deterministic; **never a gamble**), ×2 for coming back to a faded task or clearing a whole cluster, a web-shatter "wall came down" for the dreaded ones — collected in a private **"look what you did"** view with personal records and an opt-in share card | `HapticEngine`, `Progression`, `TopDollarReveal`, `WebBreakView`, `AchievementsView`, `LaserShowView` |
 | **Knowledge crumbs** | Tiny brain-science + personal-pattern drops, scattered on the map, found not pushed | `KnowledgeCrumb`, `PatternService`, `CrumbView` |
 | **Paralysis support** | On return after a freeze: no "welcome back," no guilt — warm breadcrumbs (your own words, one easy win, a coaching note you left yourself), each with a "not yet" exit. Survival mode dims everything to one glowing thing | `ReturnState`, `BreadcrumbOverlay`, `SurvivalBanner`, `CoachingNote` |
 | **Spatial audio + focus music** | Per-cluster 3D tones; a mood-reactive ambient pad that re-tunes its chord/tempo live | `SpatialAudioService` |
@@ -121,6 +121,9 @@ All in trackpad logic — precise hands, magical atmosphere:
 | Two-finger rotate | Spin the canvas — self-levels to upright |
 | Double-tap | Reset pan / zoom / rotation |
 | Four-finger tap | Constellation overview (the trackpad Launchpad gesture) |
+| Swipe up on the capture bar | The brain-dump valve — empty your head all at once |
+| Hold a node | Charge-to-claim — the ring fills, then the payoff |
+| Tap the companion | A moment of company (it leans in); hold to swap characters |
 | Tilt the phone | Holographic 3D float, relative to how you're holding it |
 
 ---

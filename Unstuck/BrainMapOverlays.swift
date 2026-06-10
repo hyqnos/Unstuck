@@ -372,15 +372,27 @@ extension BrainMapView {
             .accessibilityLabel("Surprise me")
             .accessibilityHint("Picks one thing for you")
 
-            // Look what you did — earned credits + milestones (private, never compared)
+            // Look what you did — earned credits + milestones (private, never compared).
+            // The tiny gold count is the always-on credits HUD: it only ever grows (RSD-safe).
             Button { withAnimation(.easeOut(duration: 0.25)) { showAchievements = true } } label: {
                 Image(systemName: "trophy")
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(Color(red: 1.0, green: 0.82, blue: 0.32).opacity(0.8))
                     .frame(width: 40, height: 40)
                     .panel(Circle())
+                    .overlay(alignment: .topTrailing) {
+                        if progression.credits > 0 {
+                            Text(progression.credits > 9999 ? "9999+" : "\(progression.credits)")
+                                .font(.system(size: 8, weight: .bold, design: .monospaced))
+                                .foregroundStyle(.black)
+                                .padding(.horizontal, 4).padding(.vertical, 1.5)
+                                .background(Capsule().fill(Color(red: 1.0, green: 0.82, blue: 0.32).opacity(0.9)))
+                                .offset(x: 5, y: -3)
+                        }
+                    }
             }
             .accessibilityLabel("Look what you did")
+            .accessibilityValue("\(progression.credits) credits")
             .accessibilityHint("Your earned credits and milestones")
 
             // Teach the app — only on good days

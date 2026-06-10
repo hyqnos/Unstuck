@@ -70,12 +70,13 @@ final class CaptureController {
 
         // A web thwips across the map as the thought is caught (skipped in calm mode).
         // WebShotView's own life is grow(0.36s) → hold → fade(0.9–1.6s); clear AFTER the
-        // fade finishes or it pops off at full alpha.
-        if !AppSettings.shared.calmMode {
+        // fade finishes or it pops off at full alpha. Never restart one mid-flight —
+        // rapid-fire captures would make it stutter; the playing web covers them all.
+        if !AppSettings.shared.calmMode, captureWebAt == nil {
             let stamp = Date()
             captureWebAt = stamp
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.7) { [weak self] in
-                if self?.captureWebAt == stamp { self?.captureWebAt = nil }   // don't clear a newer one
+                if self?.captureWebAt == stamp { self?.captureWebAt = nil }
             }
         }
 

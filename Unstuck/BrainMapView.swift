@@ -51,9 +51,11 @@ struct BrainMapView: View {
 
     private var theme: MoodTheme { MoodTheme.theme(for: mood.mode) }
 
-    // A tiny, climbable win — shortest active item, prefers ones with a time estimate
+    // A tiny, climbable win — shortest not-done item, prefers ones with a time estimate.
+    // Fading (cooled) items are INCLUDED: an old 2-minute thing is the perfect gentle crumb,
+    // and finishing one pays the ×2 came-back-for-it bonus.
     var easyWin: BrainItem? {
-        let active = clusters.flatMap { $0.items }.filter { $0.state == .active }
+        let active = clusters.flatMap { $0.items }.filter { $0.state != .done }
         return active.sorted { a, b in
             let am = a.estimatedMinutes ?? 999
             let bm = b.estimatedMinutes ?? 999
@@ -395,7 +397,9 @@ struct BrainMapView: View {
     // MARK: - Surprise me (decision-paralysis killer)
 
     func surpriseMe() {
-        let active = clusters.flatMap { $0.items }.filter { $0.state == .active }
+        // Fading items included — "surprise me" is exactly how a cooled thing gets a
+        // second life (gentle resurfacing, fights object permanence).
+        let active = clusters.flatMap { $0.items }.filter { $0.state != .done }
         guard let pick = active.randomElement() else {
             HapticEngine.shared.settle()
             return
