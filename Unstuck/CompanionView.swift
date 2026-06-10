@@ -53,6 +53,7 @@ struct CompanionView: View {
                 }
             }
             .onReceive(NotificationCenter.default.publisher(for: .taskCompleted)) { _ in celebrate() }
+            .onReceive(NotificationCenter.default.publisher(for: .brainDumped)) { _ in celebrate() }
             .animation(.easeInOut(duration: 1.2), value: tint)   // recolour gently when mood shifts
             .accessibilityLabel(Text("Your companion"))
             .accessibilityHint(Text("A friendly presence. Double-tap to say hi."))

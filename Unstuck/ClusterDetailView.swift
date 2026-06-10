@@ -565,7 +565,7 @@ private struct DetailNode: View {
         claimed = true
         rampTask?.cancel(); rampTask = nil
         if AppSettings.shared.calmMode { HapticEngine.shared.reward(.soft) }
-        else if (item.estimatedMinutes ?? 0) >= 30 { HapticEngine.shared.claimBurst(big: true) }   // big → leads into the breakthrough
+        else if (item.estimatedMinutes ?? 0) >= Progression.wallMinutes { HapticEngine.shared.claimBurst(big: true) }   // big → leads into the breakthrough
         else { HapticEngine.shared.claimBurst() }
         withAnimation(.easeOut(duration: 0.3)) { holdProgress = 0 }
         onComplete()

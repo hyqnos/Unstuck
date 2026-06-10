@@ -201,7 +201,8 @@ final class CaptureController {
         // After the last lands → relief + the WHY (the deepest hit); the companion celebrates.
         try? await Task.sleep(for: .seconds(0.25 + Double(shots.count) * 0.04 + 0.7))
         HapticEngine.shared.reward(.success)
-        NotificationCenter.default.post(name: .taskCompleted, object: nil)
+        // A dump is a batch of CAPTURES, not a completion — its own signal, same celebration.
+        NotificationCenter.default.post(name: .brainDumped, object: nil)
         let n = shots.count
         withAnimation(.easeIn(duration: 0.4)) {
             dumpWhy = "that's \(n) thing\(n == 1 ? "" : "s") out of your head. working memory just got lighter."

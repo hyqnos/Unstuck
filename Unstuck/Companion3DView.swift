@@ -29,6 +29,9 @@ struct Companion3D: View {
             .onReceive(NotificationCenter.default.publisher(for: .taskCompleted)) { _ in
                 if !AppSettings.shared.calmMode { celebrateTick &+= 1 }
             }
+            .onReceive(NotificationCenter.default.publisher(for: .brainDumped)) { _ in
+                if !AppSettings.shared.calmMode { celebrateTick &+= 1 }
+            }
             .accessibilityLabel(Text("Your companion"))
             .accessibilityHint(Text("A friendly 3D presence."))
     }

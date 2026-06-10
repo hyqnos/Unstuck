@@ -88,18 +88,20 @@ final class Progression {
     /// Earned multipliers — tied to REAL significance, never a dice roll: clearing a whole
     /// cluster, or finally doing a task you'd been avoiding, is genuinely worth more. So a
     /// jackpot can hit on a *small* task too — when finishing it is a real moment.
+    /// A "wall" task — the dreaded ≥30-min kind. THE single source of truth for the
+    /// threshold (the claim burst and the jackpot tier both key off this).
+    static let wallMinutes = 30
+
     @discardableResult
     func awardCredits(estimatedMinutes: Int?, clearedCluster: Bool = false, wasAvoided: Bool = false)
         -> (amount: Int, jackpot: Bool, multiplier: Int) {
         let m = estimatedMinutes ?? 5
         var base: Int
         var jackpot: Bool
-        switch m {
-        case ..<5:    base = 10;  jackpot = false
-        case 5..<15:  base = 20;  jackpot = false
-        case 15..<30: base = 50;  jackpot = false
-        default:      base = 200; jackpot = true     // the 777 / $$$ row
-        }
+        if m >= Self.wallMinutes { base = 200; jackpot = true }   // the 777 / $$$ row
+        else if m >= 15          { base = 50;  jackpot = false }
+        else if m >= 5           { base = 20;  jackpot = false }
+        else                     { base = 10;  jackpot = false }
         var multiplier = 1
         if wasAvoided     { multiplier *= 2 }                  // you cleared something you'd been dodging
         if clearedCluster { multiplier *= 2; jackpot = true }  // you emptied the whole cluster → a jackpot moment

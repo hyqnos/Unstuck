@@ -58,6 +58,9 @@ struct CompanionCorner: View {
         .onReceive(NotificationCenter.default.publisher(for: .taskCompleted)) { _ in
             if !settings.calmMode, Bool.random() { say(Self.wins.randomElement() ?? "nice one.", for: 3) }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .brainDumped)) { _ in
+            if !settings.calmMode { say(Self.wins.randomElement() ?? "nice one.", for: 3) }   // a dump always earns a word
+        }
     }
 
     @ViewBuilder private var companionBody: some View {

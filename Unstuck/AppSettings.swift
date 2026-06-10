@@ -102,4 +102,7 @@ final class AppSettings {
 
 extension Notification.Name {
     static let taskCompleted = Notification.Name("unstuck.taskCompleted")
+    /// A brain-dump landed (a batch of captures, not a completion) — celebrated like a
+    /// win, but kept semantically distinct so completion logic never miscounts it.
+    static let brainDumped = Notification.Name("unstuck.brainDumped")
 }

@@ -312,13 +312,10 @@ struct BrainMapView: View {
                 }
             }
         }
-        // Insane mode — every completion pops a quick laser burst
-        .onReceive(NotificationCenter.default.publisher(for: .taskCompleted)) { _ in
-            syncWidget()        // a completed item changes a cluster's count
-            guard settings.insaneMode else { return }
-            celebrateStart = Date()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) { celebrateStart = nil }
-        }
+        // Real wins (a completion, or a brain-dump landing) — refresh the widget, and in
+        // insane mode pop a quick laser burst
+        .onReceive(NotificationCenter.default.publisher(for: .taskCompleted)) { _ in onRealWin() }
+        .onReceive(NotificationCenter.default.publisher(for: .brainDumped)) { _ in onRealWin() }
         // App icon reflects the mood you leave in (changed on background to avoid
         // interrupting mid-session with iOS's icon-change alert)
         .onChange(of: scenePhase) { _, phase in
@@ -422,6 +419,15 @@ struct BrainMapView: View {
         mood.recordCompletion()
         progression.recordCompletion()
         NotificationCenter.default.post(name: .taskCompleted, object: nil)
+    }
+
+    /// A real win landed (completion or brain-dump): keep the widget current, and in
+    /// insane mode pop a quick laser burst.
+    private func onRealWin() {
+        syncWidget()        // item counts changed
+        guard settings.insaneMode else { return }
+        celebrateStart = Date()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) { celebrateStart = nil }
     }
 
     /// "Incomplete tasks gently fade — they never accumulate guilt." Anything untouched
