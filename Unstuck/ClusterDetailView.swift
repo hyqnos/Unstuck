@@ -427,6 +427,7 @@ private struct DetailGraph: View {
                     // User-created nodes
                     ForEach(Array(items.enumerated()), id: \.element.id) { idx, item in
                         DetailNode(item: item, onComplete: { onComplete(item) })
+                            .opacity(item.state == .fading ? 0.5 : 1)   // cooled, not called out
                             .position(itemPositions[idx])
                             .transition(.scale(scale: 0.1).combined(with: .opacity))
                     }

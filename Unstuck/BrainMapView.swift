@@ -277,6 +277,7 @@ struct BrainMapView: View {
         .ignoresSafeArea()
         .onAppear {
             seedIfNeeded()
+            fadeStaleItems()   // the RSD promise: untouched items cool, never accumulate
             motion.start()
             mood.start()
 
@@ -354,6 +355,7 @@ struct BrainMapView: View {
         .overlay(alignment: .top) { clusterPagerCorner }
         .overlay(alignment: .bottomTrailing) { companionCorner }
         .overlay { ScatterLayer(shots: capturer.scatterShots, mapSize: mapSize) }
+        .overlay { if let w = capturer.captureWebAt, !reduceMotion { WebShotView(start: w).allowsHitTesting(false) } }
         .overlay { brainDumpOverlay }
         .overlay {
             if showAchievements {
@@ -408,6 +410,10 @@ struct BrainMapView: View {
     }
 
     func completeSurvival(_ item: BrainItem) {
+        // Credits accrue SILENTLY here — no slot show for someone in survival mode (calm
+        // floor), but the win still counts and shows up later in "look what you did".
+        progression.awardCredits(estimatedMinutes: item.estimatedMinutes,
+                                 wasAvoided: item.state == .fading)
         withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
             item.state = .done
             survivalItem = nil
@@ -416,6 +422,17 @@ struct BrainMapView: View {
         mood.recordCompletion()
         progression.recordCompletion()
         NotificationCenter.default.post(name: .taskCompleted, object: nil)
+    }
+
+    /// "Incomplete tasks gently fade — they never accumulate guilt." Anything untouched
+    /// for ~3 days cools to .fading: dimmer on the map, never red, never a count. Coming
+    /// back to finish one later is worth ×2 (see Progression.awardCredits).
+    private func fadeStaleItems() {
+        let cutoff = Date().addingTimeInterval(-3 * 24 * 3600)
+        for item in clusters.flatMap(\.items)
+        where item.state == .active && item.lastTouchedAt < cutoff {
+            item.state = .fading
+        }
     }
 
 

@@ -242,9 +242,10 @@ struct NodeGraph: View {   // internal (was private) so rng is unit-testable
                     }
                 }
 
-                // User item nodes
+                // User item nodes — fading (cooled) ones render dimmer, never red
                 ForEach(Array(items.enumerated()), id: \.element.id) { idx, item in
                     NodeView(label: item.displayLabel)
+                        .opacity(item.state == .fading ? 0.45 : 1)
                         .position(itemPositions[idx])
                         .transition(.scale(scale: 0.2).combined(with: .opacity))
                 }

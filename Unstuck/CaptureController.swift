@@ -25,6 +25,7 @@ final class CaptureController {
     var highlightID: UUID? = nil
     var pendingDrop: (text: String, tier: DropTier)? = nil
     var rapidChips: [RapidChip] = []
+    var captureWebAt: Date? = nil           // a web flickers across the map as a thought lands
 
     // Internal cadence tracking
     private var chaosCount = 0
@@ -66,6 +67,17 @@ final class CaptureController {
             ?? clusters.first(where: { $0.zoneType == .captures })
             ?? clusters.first
         guard let target else { return }
+
+        // A web thwips across the map as the thought is caught (skipped in calm mode).
+        // WebShotView's own life is grow(0.36s) → hold → fade(0.9–1.6s); clear AFTER the
+        // fade finishes or it pops off at full alpha.
+        if !AppSettings.shared.calmMode {
+            let stamp = Date()
+            captureWebAt = stamp
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.7) { [weak self] in
+                if self?.captureWebAt == stamp { self?.captureWebAt = nil }   // don't clear a newer one
+            }
+        }
 
         let item = BrainItem(text: text, title: result.title, cluster: target)
         context.insert(item)
