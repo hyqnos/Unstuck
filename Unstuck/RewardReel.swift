@@ -16,7 +16,7 @@ struct RewardReel: View {
 
     private let step: CGFloat = 86
     private let cardW: CGFloat = 78
-    private let landIndex = 17
+    private let landIndex = 12   // act 3 of the jackpot sequence — keep the anticipation tight
 
     @State private var centeredIndex: Double = 0
     @State private var landed = false
@@ -104,7 +104,9 @@ struct RewardReel: View {
             try? await Task.sleep(for: .seconds(interval))
             if Task.isCancelled { return }
         }
-        if calm { HapticEngine.shared.reward(.medium) } else { HapticEngine.shared.claimBurst(big: true) }
+        // One solid landing hit — the explosions already happened in acts 1–2; this is
+        // the reflection beat, not a second blast.
+        if calm { HapticEngine.shared.reward(.medium) } else { HapticEngine.shared.reward(.rigid) }
         withAnimation(.spring(response: 0.4, dampingFraction: 0.55)) { landed = true }
         withAnimation(.easeOut(duration: 0.4).delay(0.2)) { showWhy = true }
         try? await Task.sleep(for: .seconds(4.5))

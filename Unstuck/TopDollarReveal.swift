@@ -94,7 +94,8 @@ struct TopDollarReveal: View {
             tick = amount
             HapticEngine.shared.reward(jackpot ? .rigid : .medium)
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + landAt + (jackpot ? 1.8 : 1.2)) {
+        // Jackpot hold trimmed — act 3 (the WHY reel) chains off onDone and shouldn't lag.
+        DispatchQueue.main.asyncAfter(deadline: .now() + landAt + (jackpot ? 1.1 : 1.2)) {
             withAnimation(.easeIn(duration: 0.35)) { shown = false }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { onDone() }
         }

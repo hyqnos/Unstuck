@@ -161,7 +161,10 @@ struct ClusterDetailView: View {
         .overlay(alignment: .bottom) {
             if let td = topDollar {
                 TopDollarReveal(amount: td.amount, jackpot: td.jackpot, total: Progression.shared.credits, multiplier: td.multiplier) {
+                    let wasJackpot = td.jackpot
                     topDollar = nil
+                    // Act 3, only after the payout finishes: the WHY (the deepest hit, alone on stage).
+                    if wasJackpot { reelWhy = Self.wallWhys.randomElement() }
                 }
                 .padding(.bottom, 90)
                 .allowsHitTesting(false)
@@ -353,13 +356,13 @@ struct ClusterDetailView: View {
 
         guard !AppSettings.shared.calmMode && !reduceMotion else { return }
         if award.jackpot {
-            // A real jackpot moment (wall task, OR you emptied the whole cluster): web SHATTERS +
-            // breakthrough haptic → the 777/$$$ JACKPOT meter (×multiplier) → the WHY.
+            // A real jackpot is ONE escalating sequence, never a pile-up:
+            //   act 1 the break (web shatter + breakthrough) → act 2 the payout (777 meter)
+            //   → act 3 the reflection (the WHY reel — chained from the meter's onDone).
             webBreakAt = Date()
             HapticEngine.shared.breakthrough()
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.95) { topDollar = award }
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.7) { webBreakAt = nil }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.9) { reelWhy = Self.wallWhys.randomElement() }
         } else {
             punchAt = Date()                          // small "loop closed" pop
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { punchAt = nil }
@@ -565,7 +568,9 @@ private struct DetailNode: View {
         claimed = true
         rampTask?.cancel(); rampTask = nil
         if AppSettings.shared.calmMode { HapticEngine.shared.reward(.soft) }
-        else if (item.estimatedMinutes ?? 0) >= Progression.wallMinutes { HapticEngine.shared.claimBurst(big: true) }   // big → leads into the breakthrough
+        // Wall tasks: a single sharp release-SNAP — the breakthrough 0.5s later is the
+        // explosion. Two max bursts back-to-back blur into mud; escalation needs contrast.
+        else if (item.estimatedMinutes ?? 0) >= Progression.wallMinutes { HapticEngine.shared.reward(.rigid) }
         else { HapticEngine.shared.claimBurst() }
         withAnimation(.easeOut(duration: 0.3)) { holdProgress = 0 }
         onComplete()
