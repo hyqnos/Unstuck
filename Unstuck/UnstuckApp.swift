@@ -46,6 +46,12 @@ struct UnstuckApp: App {
                     // Register Action Button shortcut so it appears in Settings → Action Button
                     UnstuckShortcuts.updateAppShortcutParameters()
                 }
+                // Home-Screen cluster widget tap → unstuck://cluster/<id> → focus it on the map.
+                .onOpenURL { url in
+                    guard url.scheme == "unstuck", url.host == "cluster",
+                          let id = url.pathComponents.last, !id.isEmpty, id != "/" else { return }
+                    NotificationCenter.default.post(name: .openClusterRequest, object: id)
+                }
         }
         .modelContainer(sharedModelContainer)
     }

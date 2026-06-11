@@ -24,6 +24,17 @@ final class Progression {
     private let marks = [1, 3, 7, 15, 30, 60, 120, 250, 500]
     var milestones: [Int] { marks }   // exposed for the "look what you did" view
 
+    /// How "grown" this user's sky is, 0…1 — a log-scaled blend of days since first
+    /// launch (~60 d to full) and lifetime captures (~200 to full). Log scale means the
+    /// early days move visibly (novelty when it matters most); monotonic means it only
+    /// ever grows — never resets, never punishes absence (RSD-safe). Found, not announced.
+    var mapAge: Double {
+        let days = max(0, Date().timeIntervalSince(AppSettings.shared.firstLaunchDate) / 86_400)
+        let dayPart = log(1 + days) / log(61.0)
+        let capPart = log(1 + Double(captured)) / log(201.0)
+        return min(1, max(0, 0.5 * dayPart + 0.5 * capPart))
+    }
+
     // MARK: - Personal records (you vs. your past self — never vs. anyone else; RSD-safe)
     private var completionDates: [Date] { completionTimes.map { Date(timeIntervalSince1970: $0) } }
     var bestDay: Int {

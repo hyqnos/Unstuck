@@ -341,6 +341,12 @@ struct BrainMapView: View {
         .onChange(of: settings.focusMusic) { _, _ in
             FocusSessionController.shared.refreshVisuals()
         }
+        // The Home-Screen cluster widget was tapped → land directly on that cluster.
+        .onReceive(NotificationCenter.default.publisher(for: .openClusterRequest)) { note in
+            guard !showOnboarding, let id = note.object as? String,
+                  let target = clusters.first(where: { $0.id.uuidString == id }) else { return }
+            withAnimation(.spring(response: 0.42, dampingFraction: 0.78)) { focusedCluster = target }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .actionButtonCapture)) { _ in
             showingVoiceCapture = true
             HapticEngine.shared.tap()

@@ -66,6 +66,10 @@ final class AppSettings {
         didSet { UserDefaults.standard.set(calendarDays, forKey: Self.calDaysKey) }
     }
 
+    /// Set once, on the very first launch — the birthday of this user's sky.
+    /// Feeds `Progression.mapAge` (the map slowly deepens with time; never resets).
+    let firstLaunchDate: Date
+
     // Convenience gates used throughout the app
     var calmMode: Bool   { sensory == .calm }
     var insaneMode: Bool { sensory == .insane }
@@ -77,6 +81,7 @@ final class AppSettings {
     private static let adaptiveKey = "unstuck.adaptiveMood"
     private static let charKey = "unstuck.companionCharacter"
     private static let calDaysKey = "unstuck.calendarDays"
+    private static let firstLaunchKey = "unstuck.firstLaunch"
 
     private init() {
         let raw = UserDefaults.standard.string(forKey: Self.key)
@@ -88,6 +93,12 @@ final class AppSettings {
         adaptiveMood = UserDefaults.standard.object(forKey: Self.adaptiveKey) as? Bool ?? true
         companionCharacter = CompanionCharacter(rawValue: UserDefaults.standard.string(forKey: Self.charKey) ?? "") ?? .lion
         calendarDays = max(1, UserDefaults.standard.object(forKey: Self.calDaysKey) as? Int ?? 7)
+        if let d = UserDefaults.standard.object(forKey: Self.firstLaunchKey) as? Date {
+            firstLaunchDate = d
+        } else {
+            firstLaunchDate = Date()
+            UserDefaults.standard.set(firstLaunchDate, forKey: Self.firstLaunchKey)
+        }
     }
 
     /// Cycle calm → normal → insane → calm
@@ -105,4 +116,6 @@ extension Notification.Name {
     /// A brain-dump landed (a batch of captures, not a completion) — celebrated like a
     /// win, but kept semantically distinct so completion logic never miscounts it.
     static let brainDumped = Notification.Name("unstuck.brainDumped")
+    /// The Home-Screen cluster widget was tapped — open that cluster (object = id string).
+    static let openClusterRequest = Notification.Name("unstuck.openClusterRequest")
 }

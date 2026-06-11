@@ -93,6 +93,9 @@ struct ClusterWidgetView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        // Tap the widget body → the app opens ON this cluster (the ‹ › buttons still
+        // cycle in place; widget URLs route to the host app without scheme registration).
+        .widgetURL(URL(string: "unstuck://cluster/\(c.id)"))
     }
 
     @ViewBuilder private var dots: some View {
