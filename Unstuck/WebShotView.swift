@@ -10,7 +10,7 @@ struct WebShotView: View {
     var rings: Int = 6
 
     var body: some View {
-        TimelineView(.animation) { tl in
+        TimelineView(.animation(minimumInterval: 1.0 / 60.0)) { tl in   // 60fps reads identically
             let t = tl.date.timeIntervalSince(start)
             Canvas { ctx, size in
                 let center = CGPoint(x: size.width / 2, y: size.height / 2)

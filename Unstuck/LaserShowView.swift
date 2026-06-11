@@ -44,7 +44,9 @@ struct LaserShowView: View {
     }
 
     private var strobe: some View {
-        TimelineView(.animation) { tl in
+        // 60fps cap — sweeping beams/flames read identically at 60, and this is the
+        // heaviest Canvas in the app (fires on every completion in insane mode).
+        TimelineView(.animation(minimumInterval: 1.0 / 60.0)) { tl in
             Canvas { ctx, size in
                 let t = tl.date.timeIntervalSince(start)
                 guard t >= 0, t < duration else { return }

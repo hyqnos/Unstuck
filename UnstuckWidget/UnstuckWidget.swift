@@ -8,8 +8,9 @@ import ActivityKit
 
 // MARK: - Small helpers
 
-private extension Color {
+extension Color {
     /// Build a Color from a "RRGGBB" hex string (falls back to teal).
+    /// Target-internal: shared by the Live Activity AND the cluster widget.
     init(hex: String) {
         let s = hex.trimmingCharacters(in: CharacterSet(charactersIn: "#"))
         var v: UInt64 = 0

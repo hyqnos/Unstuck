@@ -111,7 +111,8 @@ private struct SlotReels: View {
     private let pool = ["🍒", "BAR", "7", "$", "★", "2×"]
 
     var body: some View {
-        TimelineView(.animation) { tl in
+        // 30fps cap: the symbol cycle only changes at 20 Hz — redrawing at 120 Hz is pure waste.
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { tl in
             let t = tl.date.timeIntervalSince(start)
             HStack(spacing: 10) {
                 ForEach(0..<3, id: \.self) { i in

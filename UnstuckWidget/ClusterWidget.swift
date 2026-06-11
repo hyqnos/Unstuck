@@ -53,7 +53,7 @@ struct ClusterWidgetView: View {
         return ((entry.index % n) + n) % n
     }
     private var current: ClusterSummary? { entry.summaries.isEmpty ? nil : entry.summaries[idx] }
-    private var col: Color { hexColor(current?.tintHex ?? "4CD9BF") }
+    private var col: Color { Color(hex: current?.tintHex ?? "4CD9BF") }
 
     var body: some View {
         Group {
@@ -120,7 +120,7 @@ struct ClusterWidgetView: View {
 
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: 9) {
-            Circle().fill(hexColor("4CD9BF")).frame(width: 7, height: 7)
+            Circle().fill(Color(hex: "4CD9BF")).frame(width: 7, height: 7)
             Text("your map lives here")
                 .font(.system(size: 13, weight: .light, design: .monospaced)).foregroundStyle(.white.opacity(0.85))
             Spacer(minLength: 0)
@@ -142,14 +142,4 @@ struct ClusterWidget: Widget {
     }
 }
 
-// Local hex→Color (the widget target doesn't share the app's Color(hex:) helper).
-private func hexColor(_ hex: String) -> Color {
-    var s = hex.hasPrefix("#") ? String(hex.dropFirst()) : hex
-    if s.count == 6 { s += "FF" }
-    var v: UInt64 = 0; Scanner(string: s).scanHexInt64(&v)
-    return Color(.sRGB,
-                 red: Double((v >> 24) & 0xFF) / 255,
-                 green: Double((v >> 16) & 0xFF) / 255,
-                 blue: Double((v >> 8) & 0xFF) / 255,
-                 opacity: Double(v & 0xFF) / 255)
-}
+// hex→Color comes from the target-internal Color(hex:) in UnstuckWidget.swift.
