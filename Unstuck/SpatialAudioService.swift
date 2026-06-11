@@ -2,7 +2,7 @@ import AVFoundation
 import Foundation
 
 // nonisolated so its Hashable conformance is usable on the background audio queue
-nonisolated enum Blip: Hashable { case land, open, complete, dismiss }
+nonisolated enum Blip: Hashable { case land, open, complete, dismiss, kick }
 
 /// Each cluster emits a subtle sine tone from its 3D position.
 /// Tilting the phone shifts the soundscape — the map sounds like a real space.
@@ -198,6 +198,7 @@ final class SpatialAudioService {
         blipBuffers[.open]     = makeBlip(frequency: 330, duration: 0.14)
         blipBuffers[.complete] = makeBlip(frequency: 660, duration: 0.22)
         blipBuffers[.dismiss]  = makeBlip(frequency: 520, duration: 0.12)
+        blipBuffers[.kick]     = makeKick()   // the laser-show beat
 
         // Pool of player nodes attached to the 3D environment
         for _ in 0..<5 {
@@ -225,6 +226,28 @@ final class SpatialAudioService {
             let attack = Swift.min(1.0, t / 0.004)        // 4ms attack
             let decay  = exp(-t * 13.0)                    // smooth tail
             ptr[i] = Float(sin(w * Double(i)) * attack * decay * 0.6)
+        }
+        return buf
+    }
+
+    /// A club kick: a sine whose pitch DROPS 150→45 Hz over the hit (that fall is what
+    /// reads as "kick drum" rather than "beep"), fast decay, slight saturation.
+    private func makeKick() -> AVAudioPCMBuffer {
+        let sr = 22050.0, duration = 0.24
+        let frames = AVAudioFrameCount(sr * duration)
+        guard let fmt = AVAudioFormat(standardFormatWithSampleRate: sr, channels: 1),
+              let buf = AVAudioPCMBuffer(pcmFormat: fmt, frameCapacity: frames),
+              let ptr = buf.floatChannelData?[0] else { return AVAudioPCMBuffer() }
+        buf.frameLength = frames
+        var phase = 0.0
+        for i in 0..<Int(frames) {
+            let t = Double(i) / sr
+            let f = 45 + 105 * exp(-t * 28)               // the pitch drop
+            phase += 2.0 * .pi * f / sr
+            let attack = Swift.min(1.0, t / 0.002)
+            let decay  = exp(-t * 16.0)
+            let s = sin(phase) * attack * decay
+            ptr[i] = Float(tanh(s * 1.8) * 0.85)          // soft clip = punch
         }
         return buf
     }
