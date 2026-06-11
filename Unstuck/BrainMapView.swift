@@ -26,6 +26,8 @@ struct BrainMapView: View {
     @State var showDump = false                // brain-dump valve (swipe up on the capture bar)
     @State var showAchievements = false        // "look what you did" — credits + milestones
     @State var pagerIndex = 0                   // on-map cluster pager position
+    @State var chromeRests = false             // idle → controls fade to a whisper (deference)
+    @State private var chromeRestTask: Task<Void, Never>? = nil
     @Environment(\.accessibilityReduceMotion) var reduceMotion
     @State var showIntro = false               // launch laser show
     @State var introStart = Date()
@@ -280,6 +282,7 @@ struct BrainMapView: View {
         .onAppear {
             seedIfNeeded()
             fadeStaleItems()   // the RSD promise: untouched items cool, never accumulate
+            scheduleChromeRest()
             motion.start()
             mood.start()
 
@@ -347,11 +350,19 @@ struct BrainMapView: View {
         }
         .animation(.easeInOut(duration: 0.2), value: showingVoiceCapture)
         .animation(.easeInOut(duration: 0.25), value: progression.pendingMilestone)
+        // Deference: any touch wakes the chrome; quiet hands let it rest again.
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    if chromeRests { withAnimation(.easeOut(duration: 0.25)) { chromeRests = false } }
+                }
+                .onEnded { _ in scheduleChromeRest() }
+        )
         .overlay { overlayStack }
         .overlay(alignment: .bottom) { rapidChipsOverlay }
-        .overlay(alignment: .topTrailing) { cornerControls }
-        .overlay(alignment: .topLeading) { moodBadgeCorner }
-        .overlay(alignment: .top) { clusterPagerCorner }
+        .overlay(alignment: .topTrailing) { cornerControls.opacity(chromeRests ? 0.25 : 1) }
+        .overlay(alignment: .topLeading) { moodBadgeCorner.opacity(chromeRests ? 0.25 : 1) }
+        .overlay(alignment: .top) { clusterPagerCorner.opacity(chromeRests ? 0.25 : 1) }
         .overlay(alignment: .bottomTrailing) { companionCorner }
         .overlay { ScatterLayer(shots: capturer.scatterShots, mapSize: mapSize) }
         .overlay { if let w = capturer.captureWebAt, !reduceMotion { WebShotView(start: w).allowsHitTesting(false) } }
@@ -423,6 +434,19 @@ struct BrainMapView: View {
         mood.recordCompletion()
         progression.recordCompletion()
         NotificationCenter.default.post(name: .taskCompleted, object: nil)
+    }
+
+    /// Deference (the Apple-minimal move): after ~7s of quiet hands, the top chrome
+    /// (controls, mood badge, pager) fades to a whisper so the map is the hero. Never
+    /// fully gone — object permanence matters for this audience — and any touch brings
+    /// it straight back. The app literally stops asking for attention.
+    private func scheduleChromeRest() {
+        chromeRestTask?.cancel()
+        chromeRestTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(7))
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeInOut(duration: 1.4)) { chromeRests = true }
+        }
     }
 
     /// A real win landed (completion or brain-dump): keep the widget current, and in

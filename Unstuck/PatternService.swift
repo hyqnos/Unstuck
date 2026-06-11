@@ -13,10 +13,21 @@ final class PatternService {
 
     @MainActor
     func analyse(clusters: [Cluster]) {
-        var result: [KnowledgeCrumb] = KnowledgeCrumb.makeFacts(count: 5)
+        let facts = KnowledgeCrumb.makeFacts(count: 5)
         let patternCrumbs = derivePatterns(from: clusters)
-        result.append(contentsOf: patternCrumbs)
-        crumbs = result
+
+        // Scarcity, by design: at most THREE crumbs on the map at once (two facts + one
+        // pattern), rotating daily. Fewer competing voices on the canvas — and a found
+        // crumb stays precious instead of becoming wallpaper. The rotation itself is
+        // quiet novelty: tomorrow's map whispers something different.
+        let day = Calendar.current.ordinality(of: .day, in: .era, for: Date()) ?? 0
+        var picked: [KnowledgeCrumb] = []
+        if !facts.isEmpty {
+            picked.append(facts[day % facts.count])
+            if facts.count > 1 { picked.append(facts[(day + 2) % facts.count]) }
+        }
+        if !patternCrumbs.isEmpty { picked.append(patternCrumbs[day % patternCrumbs.count]) }
+        crumbs = picked
     }
 
     // MARK: - Pattern derivation
